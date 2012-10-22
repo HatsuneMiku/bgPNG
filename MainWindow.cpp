@@ -168,6 +168,27 @@ void MainWindow::closeEvent(QCloseEvent *ce)
   }
 }
 
+void MainWindow::drawXORrect(ulong w)
+{
+  RECT r;
+  BOOL result = GetClientRect((HWND)w, &r);
+  if(result){
+    HDC dc = GetDC((HWND)w);
+    HPEN pen = (HPEN)CreatePen(PS_SOLID, 5, RGB(255, 0, 0));
+    HPEN op = (HPEN)SelectObject(dc, pen);
+    HBRUSH br = (HBRUSH)CreateHatchBrush(HS_BDIAGONAL, RGB(0, 0, 0));
+    HBRUSH ob = (HBRUSH)SelectObject(dc, br);
+    int om = SetBkMode(dc, TRANSPARENT);
+    Rectangle(dc, r.left, r.top, r.right, r.bottom);
+    SetBkMode(dc, om);
+    SelectObject(dc, ob);
+    DeleteObject(br);
+    SelectObject(dc, op);
+    DeleteObject(pen);
+    ReleaseDC((HWND)w, dc);
+  }
+}
+
 int MainWindow::cmpWindowName(char *buf)
 {
   static char *exclude[] = {APP_NAME, "msime", "Program Manager"};
@@ -214,6 +235,10 @@ void MainWindow::mousePressEvent(QMouseEvent *ev)
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
 {
+  if(prev_window){
+    drawXORrect(prev_window);
+    prev_window = 0;
+  }
 }
 
 void MainWindow::createActions()

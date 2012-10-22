@@ -36,6 +36,7 @@ protected:
   void loadLayout();
   void closeEvent(QCloseEvent *ce);
 
+  void drawXORrect(ulong w);
   int cmpWindowName(char *buf);
   void mouseMoveEvent(QMouseEvent *ev);
   void mousePressEvent(QMouseEvent *ev);
