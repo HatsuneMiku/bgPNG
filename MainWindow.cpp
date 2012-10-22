@@ -176,10 +176,11 @@ void MainWindow::drawXORrect(ulong w)
     HDC dc = GetDC((HWND)w);
     HPEN pen = (HPEN)CreatePen(PS_SOLID, 8, RGB(255, 0, 0));
     HPEN op = (HPEN)SelectObject(dc, pen);
-    HBRUSH br = (HBRUSH)CreateHatchBrush(HS_BDIAGONAL, RGB(0, 0, 0));
+    // HBRUSH br = (HBRUSH)CreateHatchBrush(HS_BDIAGONAL, RGB(0, 0, 0));
+    HBRUSH br = (HBRUSH)CreateSolidBrush(RGB(15, 15, 15)); // xor
     HBRUSH ob = (HBRUSH)SelectObject(dc, br);
     int om = SetBkMode(dc, TRANSPARENT);
-    int orop = SetROP2(dc, R2_XORPEN); // neglect brush ?
+    int orop = SetROP2(dc, R2_XORPEN);
     Rectangle(dc, r.left, r.top, r.right, r.bottom);
     SetROP2(dc, orop);
     SetBkMode(dc, om);
