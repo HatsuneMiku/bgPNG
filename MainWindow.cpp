@@ -174,12 +174,14 @@ void MainWindow::drawXORrect(ulong w)
   BOOL result = GetClientRect((HWND)w, &r);
   if(result){
     HDC dc = GetDC((HWND)w);
-    HPEN pen = (HPEN)CreatePen(PS_SOLID, 5, RGB(255, 0, 0));
+    HPEN pen = (HPEN)CreatePen(PS_SOLID, 8, RGB(255, 0, 0));
     HPEN op = (HPEN)SelectObject(dc, pen);
     HBRUSH br = (HBRUSH)CreateHatchBrush(HS_BDIAGONAL, RGB(0, 0, 0));
     HBRUSH ob = (HBRUSH)SelectObject(dc, br);
     int om = SetBkMode(dc, TRANSPARENT);
+    int orop = SetROP2(dc, R2_XORPEN); // neglect brush ?
     Rectangle(dc, r.left, r.top, r.right, r.bottom);
+    SetROP2(dc, orop);
     SetBkMode(dc, om);
     SelectObject(dc, ob);
     DeleteObject(br);
@@ -209,7 +211,8 @@ void MainWindow::mouseMoveEvent(QMouseEvent *ev)
       if(result
       && QRect(r.left, r.top, r.right - r.left, r.bottom - r.top).contains(p)){
         if(w == (HWND)prev_window) break;
-        prev_window = (ulong)w;
+        if(prev_window) drawXORrect(prev_window);
+        drawXORrect(prev_window = (ulong)w);
         char buf[1024];
         if(GetWindowTextA(w, buf, sizeof(buf))){
           if(!cmpWindowName(buf)) break;
