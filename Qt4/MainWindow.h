@@ -10,7 +10,9 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QtSql>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <cstring>
 
 #include "bgPNG.h"

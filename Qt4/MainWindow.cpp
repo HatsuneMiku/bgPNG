@@ -213,20 +213,23 @@ void MainWindow::mouseMoveEvent(QMouseEvent *ev)
       && QRect(r.left, r.top, r.right - r.left, r.bottom - r.top).contains(p)){
         if(w == (HWND)prev_window) break;
         if(prev_window) drawXORrect(prev_window);
-        drawXORrect(prev_window = (ulong)w);
-#if 0
         char buf[1024];
         if(GetWindowTextA(w, buf, sizeof(buf))){
-          if(!cmpWindowName(buf)) break;
-          cout << "HANDLE: " << setw(8) << setfill('0') << hex << right;
-          cout << (ulong)w << " Window: [" << buf << "]";
+          if(!cmpWindowName(buf)){
+            prev_window = 0;
+            mHANDLE->clear();
+            break;
+          }
+          drawXORrect(prev_window = (ulong)w);
+          ostringstream oss;
+          oss << setw(8) << setfill('0') << hex << right << (ulong)w;
+          oss << " w[" << buf << "]";
           char cls[1024];
           if(GetClassNameA(w, cls, sizeof(cls))){
-            cout << " Class: [" << cls << "]";
+            oss << " c[" << cls << "]";
           }
-          cout << endl;
+          mHANDLE->setText(QString(oss.str().c_str()));
         }
-#endif
         break;
       }
     }
