@@ -24,7 +24,7 @@ void bgPNG::getb(const QByteArray &b)
   for(QByteArray::ConstIterator it = b.begin(); it != b.end(); it++)
     v.push_back(*it);
   for(vector<uchar>::iterator it = v.begin(); it != v.end(); it++)
-    cout << setw(2) << setfill('0') << hex << right << (ushort)*it << ", ";
+    cout << setw(2) << setfill('0') << hex << right << (uint)*it << ", ";
   cout << endl;
 
   stat = 1;

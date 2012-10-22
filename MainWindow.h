@@ -11,6 +11,7 @@
 #include <QSystemTrayIcon>
 #include <QtSql>
 #include <iostream>
+#include <cstring>
 
 #include "bgPNG.h"
 #include "ChaseThread.h"
@@ -35,6 +36,11 @@ protected:
   void loadLayout();
   void closeEvent(QCloseEvent *ce);
 
+  int cmpWindowName(char *buf);
+  void mouseMoveEvent(QMouseEvent *ev);
+  void mousePressEvent(QMouseEvent *ev);
+  void mouseReleaseEvent(QMouseEvent *ev);
+
 private:
   void createActions();
   void createMenus();
@@ -53,6 +59,7 @@ public slots:
   void cleanupcode();
 
 private:
+  ulong prev_window;
   ChaseThread *th;
   QQueue<QString> &quelst;
   QSqlDatabase db;

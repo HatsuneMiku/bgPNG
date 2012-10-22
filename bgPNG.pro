@@ -19,6 +19,7 @@ CODECFORTR = utf-8
 
 #unix:LIBS += -l?
 #win32:LIBS += lib?dll.lib
+#LIBS += libkernel32 libuser32 libgdi32
 
 win32 {
  debug {

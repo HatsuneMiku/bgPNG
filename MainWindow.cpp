@@ -4,9 +4,13 @@
 
 #include "MainWindow.h"
 
+#include <windows.h>
+
+using namespace std;
+
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) :
-  QMainWindow(parent, flags), quelst(q)
+  QMainWindow(parent, flags), prev_window(0), quelst(q)
 {
   QIcon ico = QIcon(APP_ICON);
   setWindowIcon(ico);
@@ -164,6 +168,54 @@ void MainWindow::closeEvent(QCloseEvent *ce)
   }
 }
 
+int MainWindow::cmpWindowName(char *buf)
+{
+  static char *exclude[] = {APP_NAME, "msime", "Program Manager"};
+  for(size_t i = 0; i < sizeof(exclude) / sizeof(exclude[0]); i++)
+    if(!strncmp(buf, exclude[i], strlen(exclude[i]))) return 0;
+  return 1;
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *ev)
+{
+  QPoint p = ev->globalPos();
+  // cout << p.x() << ", " << p.y() << endl;
+  HWND w = GetTopWindow(GetDesktopWindow());
+  while(w){
+    if(IsWindowVisible(w)){
+      RECT r;
+      BOOL result = GetWindowRect(w, &r);
+      if(result
+      && QRect(r.left, r.top, r.right - r.left, r.bottom - r.top).contains(p)){
+        if(w == (HWND)prev_window) break;
+        prev_window = (ulong)w;
+        char buf[1024];
+        if(GetWindowTextA(w, buf, sizeof(buf))){
+          if(!cmpWindowName(buf)) break;
+          cout << "HANDLE: " << setw(8) << setfill('0') << hex << right;
+          cout << (ulong)w << " Window: [" << buf << "]";
+          char cls[1024];
+          if(GetClassNameA(w, cls, sizeof(cls))){
+            cout << " Class: [" << cls << "]";
+          }
+          cout << endl;
+        }
+        break;
+      }
+    }
+    w = GetWindow(w, GW_HWNDNEXT);
+  }
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *ev)
+{
+  // if(ev->button() == Qt::RightButton) releaseMouse();
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
+{
+}
+
 void MainWindow::createActions()
 {
   mChaseAction = new QAction(QIcon(":/qrc/icon_chase"),
@@ -298,6 +350,8 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::chase()
 {
+  // grabMouse(QCursor(QIcon(APP_ICON).pixmap(32, 32)));
+
   QString handle(mHANDLE->text());
 
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
