@@ -214,6 +214,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *ev)
         if(w == (HWND)prev_window) break;
         if(prev_window) drawXORrect(prev_window);
         drawXORrect(prev_window = (ulong)w);
+#if 0
         char buf[1024];
         if(GetWindowTextA(w, buf, sizeof(buf))){
           if(!cmpWindowName(buf)) break;
@@ -225,6 +226,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *ev)
           }
           cout << endl;
         }
+#endif
         break;
       }
     }
