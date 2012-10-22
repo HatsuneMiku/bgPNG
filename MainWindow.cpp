@@ -308,7 +308,9 @@ void MainWindow::chase()
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
   bgPNG *bp456 = new bgPNG(456);
   connect(bp456, SIGNAL(done()), this, SLOT(fin()));
-  bp456->get(handle);
+  QTextCodec *jp = QTextCodec::codecForName("utf-8");
+  bp456->getb(jp->fromUnicode(handle));
+  // delete jp;
 }
 
 void MainWindow::fin()

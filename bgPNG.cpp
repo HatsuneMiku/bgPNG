@@ -13,6 +13,9 @@ bgPNG::bgPNG(int n, QObject *parent) : QObject(parent), num(n), stat(0)
 void bgPNG::get(const QString &s)
 {
   cout << qPrintable(s) << endl;
+
+  stat = 1;
+  emit done();
 }
 
 void bgPNG::getb(const QByteArray &b)
@@ -23,6 +26,9 @@ void bgPNG::getb(const QByteArray &b)
   for(vector<uchar>::iterator it = v.begin(); it != v.end(); it++)
     cout << setw(2) << setfill('0') << hex << right << (ushort)*it << ", ";
   cout << endl;
+
+  stat = 1;
+  emit done();
 }
 
 void bgPNG::fin(void)
