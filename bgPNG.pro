@@ -8,12 +8,17 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += bgPNG.h
-SOURCES += main.cpp bgPNG.cpp
+HEADERS += MainWindow.h bgPNG.h ChaseThread.h
+SOURCES += main.cpp MainWindow.cpp bgPNG.cpp ChaseThread.cpp
+RESOURCES += bgPNG.qrc
 
-QT = core network
+#QT = core network
+QT += network sql
 
 CODECFORTR = utf-8
+
+#unix:LIBS += -l?
+#win32:LIBS += lib?dll.lib
 
 win32 {
  debug {

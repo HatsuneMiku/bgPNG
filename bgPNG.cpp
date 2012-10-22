@@ -1,24 +1,21 @@
 /*
   bgPNG.cpp
-
-  http://www.forest.impress.co.jp/img/wf/docs/567/238/html/image2.jpg.html
-  http://www.forest.impress.co.jp/docs/review/20121019_567238.html
 */
 
 #include "bgPNG.h"
 
 using namespace std;
 
-QbgPNG::QbgPNG(QObject *parent) : QObject(parent)
+bgPNG::bgPNG(int n, QObject *parent) : QObject(parent), num(n), stat(0)
 {
 }
 
-void QbgPNG::conout(const QString &s)
+void bgPNG::get(const QString &s)
 {
   cout << qPrintable(s) << endl;
 }
 
-void QbgPNG::conoutb(const QByteArray &b)
+void bgPNG::getb(const QByteArray &b)
 {
   vector<uchar> v(b.size()); // filled by '\0' x n
   for(QByteArray::ConstIterator it = b.begin(); it != b.end(); it++)
@@ -28,7 +25,8 @@ void QbgPNG::conoutb(const QByteArray &b)
   cout << endl;
 }
 
-void QbgPNG::fin(void)
+void bgPNG::fin(void)
 {
+  stat = 1;
   emit done();
 }

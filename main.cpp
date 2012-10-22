@@ -2,17 +2,38 @@
   main.cpp
 */
 
-#include "bgPNG.h"
+#include "MainWindow.h"
 
 int main(int ac, char **av)
 {
-  QCoreApplication app(ac, av);
-  QbgPNG bp;
-  QObject::connect(&bp, SIGNAL(done()), &app, SLOT(quit()));
-  QString txt(QObject::trUtf8("日本語表示UTF8"));
-  bp.conout(txt);
-  QTextCodec *jp = QTextCodec::codecForName("UTF-8");
-  bp.conoutb(jp->fromUnicode(txt));
-  QTimer::singleShot(0, &app, SLOT(quit())); // called after (exec)
+  // 起動インスタンスをひとつにするには QSingle(Core)Application を使う option
+  QApplication app(ac, av);
+  QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
+  QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
+
+/*
+  QTranslator appTranslator;
+  appTranslator.load(QLocale::system().name(), ":/translations");
+  app.installTranslator(&appTranslator);
+
+  QTranslator qtTranslator;
+  qtTranslator.load("qt_" + QLocale::system().name(),
+    qApp->applicationDirPath());
+  app.installTranslator(&qtTranslator);
+*/
+
+  // TrayIcon を使うので DeleteOnClose も destroyed への接続も不要
+  if(!QSystemTrayIcon::isSystemTrayAvailable()){
+    QMessageBox::critical(0, QObject::trUtf8(APP_NAME),
+      QObject::trUtf8("システムトレイがありません"));
+      return 1;
+  }
+  QApplication::setQuitOnLastWindowClosed(false);
+
+  QQueue<QString> quelst;
+  MainWindow w(quelst);
+  // w.setAttribute(Qt::WA_DeleteOnClose); // 下の connect と両方だと UAE 出る
+  // connect(&w, SIGNAL(destroyed()), &app, SLOT(quit()));
+
   return app.exec();
 }
