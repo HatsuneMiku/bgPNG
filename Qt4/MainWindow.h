@@ -21,7 +21,7 @@
 #define APP_CONF APP_NAME".qtd"
 #define APP_DATA APP_NAME".sl3"
 #define APP_DB "QSQLITE"
-#define SAMPLE_IMG "resource/claudia.png"
+#define SAMPLE_IMG "../resource/claudia.png"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
