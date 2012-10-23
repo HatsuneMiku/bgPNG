@@ -62,7 +62,7 @@ public slots:
   void cleanupcode();
 
 private:
-  ulong prev_window;
+  ulong hwnd, prev_window;
   ChaseThread *th;
   QQueue<QString> &quelst;
   QSqlDatabase db;

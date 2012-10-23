@@ -10,7 +10,7 @@ using namespace std;
 
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) :
-  QMainWindow(parent, flags), prev_window(0), quelst(q)
+  QMainWindow(parent, flags), hwnd(0), prev_window(0), quelst(q)
 {
   QIcon ico = QIcon(APP_ICON);
   setWindowIcon(ico);
@@ -216,13 +216,13 @@ void MainWindow::mouseMoveEvent(QMouseEvent *ev)
         char buf[1024];
         if(GetWindowTextA(w, buf, sizeof(buf))){
           if(!cmpWindowName(buf)){
-            prev_window = 0;
+            prev_window = hwnd = 0;
             mHANDLE->clear();
             break;
           }
-          drawXORrect(prev_window = (ulong)w);
+          drawXORrect(prev_window = hwnd = (ulong)w);
           ostringstream oss;
-          oss << setw(8) << setfill('0') << hex << right << (ulong)w;
+          oss << setw(8) << setfill('0') << hex << right << hwnd;
           oss << " w[" << buf << "]";
           char cls[1024];
           if(GetClassNameA(w, cls, sizeof(cls))){
