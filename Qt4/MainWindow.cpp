@@ -313,7 +313,7 @@ void MainWindow::createDockWindows()
   dockT1->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   QWidget *wT1 = new QWidget();
   QHBoxLayout *hbT1 = new QHBoxLayout();
-  mHANDLE = new QLineEdit(trUtf8(SAMPLE_IMG), dockT1);
+  mHANDLE = new QLineEdit(trUtf8("drag&drop image to target window"), dockT1);
   hbT1->addWidget(mHANDLE);
   QPushButton *btnDl = new QPushButton(trUtf8("追尾(&G)"), dockT1);
   connect(btnDl, SIGNAL(clicked()), this, SLOT(chase()));

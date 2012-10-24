@@ -4,6 +4,8 @@
 
 #include "MainWindow.h"
 
+using namespace std;
+
 int main(int ac, char **av)
 {
   // 起動インスタンスをひとつにするには QSingle(Core)Application を使う option
@@ -21,6 +23,23 @@ int main(int ac, char **av)
     qApp->applicationDirPath());
   app.installTranslator(&qtTranslator);
 */
+
+#if 0
+  cout << QTextCodec::codecForLocale()->name().constData() << endl;
+  // QTextCodec::setCodecForLocale(QTextCodec::codecForName("System"));
+  QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
+  QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
+  QString qs(QObject::trUtf8("abc日本語表示xyz"));
+  wstring ws(qs.toStdWString());
+  cout << "toStdWString: " << ws.c_str() << endl;
+  string ls(qs.toLocal8Bit()); // QByteArray data() constData()
+  cout << "toLocal8Bit: " << ls << endl;
+  string as(qs.toAscii()); // QByteArray data() constData()
+  cout << "toAscii: " << as << endl;
+  string ss(qs.toStdString()); // 偶々動くかも知れないし動かないかも知れない
+  cout << "toStdString: " << ss << endl;
+  return 0;
+#endif
 
   // TrayIcon を使うので DeleteOnClose も destroyed への接続も不要
   if(!QSystemTrayIcon::isSystemTrayAvailable()){

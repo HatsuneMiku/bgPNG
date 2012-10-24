@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QtSql>
+#include <QFileInfo>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -18,12 +19,14 @@
 #include "bgPNG.h"
 #include "ChaseThread.h"
 
+#define SAMPLE_NAME "claudia.png"
+#define SAMPLE_IMG ":/qrc/img_sample"
+
 #define APP_NAME "bgPNG"
 #define APP_ICON ":/qrc/icon_bgPNG"
 #define APP_CONF APP_NAME".qtd"
 #define APP_DATA APP_NAME".sl3"
 #define APP_DB "QSQLITE"
-#define SAMPLE_IMG "../resource/claudia.png"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
