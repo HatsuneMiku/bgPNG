@@ -17,14 +17,10 @@ void ChaserWidget::paintEvent(QPaintEvent *ev)
 {
   if(pixmap.isNull()) return;
   QPainter p(this);
-  p.drawPixmap(0, 0, width(), height(),
-    pixmap, 0, 0, pixmap.width(), pixmap.height());
-/*
   double r = (double)pixmap.width() / (double)pixmap.height();
   int w = width(), h = height();
-  p.drawPixmap(0, 0, r < 1.0 ? (int)(r * w) : w, r < 1.0 ? h : (int)(h / r),
+  p.drawPixmap(0, 0, r < 1.0 ? (int)(r * h) : w, r < 1.0 ? h : (int)(w / r),
     pixmap, 0, 0, pixmap.width(), pixmap.height());
-*/
 }
 
 MainWindow::MainWindow(QQueue<QString> &q,
