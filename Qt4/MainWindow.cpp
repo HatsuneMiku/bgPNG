@@ -17,7 +17,14 @@ void ChaserWidget::paintEvent(QPaintEvent *ev)
 {
   if(pixmap.isNull()) return;
   QPainter p(this);
-  p.drawPixmap(0, 0, pixmap);
+  p.drawPixmap(0, 0, width(), height(),
+    pixmap, 0, 0, pixmap.width(), pixmap.height());
+/*
+  double r = (double)pixmap.width() / (double)pixmap.height();
+  int w = width(), h = height();
+  p.drawPixmap(0, 0, r < 1.0 ? (int)(r * w) : w, r < 1.0 ? h : (int)(h / r),
+    pixmap, 0, 0, pixmap.width(), pixmap.height());
+*/
 }
 
 MainWindow::MainWindow(QQueue<QString> &q,
@@ -425,11 +432,20 @@ void MainWindow::treeActivated(const QModelIndex &idx)
   if(QFileInfo(path).suffix().toLower() != "png") return;
   mText->setPlainText(path);
   QImage img(path);
-  if(img.isNull())
+  if(img.isNull()){
     qDebug("PNG is null: %s", path.toUtf8().constData());
-  else
-    cw->pixmap = QPixmap::fromImage(
-      img.convertToFormat(QImage::Format_ARGB32));
+  }else{
+    QImage img2 = img.convertToFormat(QImage::Format_ARGB32);
+    for(int y = 0; y < img2.height(); y++){
+      QRgb *row = (QRgb *)img2.scanLine(y);
+      for(int x = 0; x < img2.width(); x++){
+        ((uchar *)&row[x])[3] = 0x30;
+      }
+    }
+    cw->pixmap = QPixmap::fromImage(img2);
+    cw->setUpdatesEnabled(true);
+    cw->update(); // cw->repaint();
+  }
 }
 
 void MainWindow::chase()
