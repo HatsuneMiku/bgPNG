@@ -29,16 +29,14 @@ MainWindow::MainWindow(QQueue<QString> &q,
 
   home = QString(trUtf8("%1/.%2").arg(QDir::homePath()).arg(APP_NAME));
   qDebug("home: %s", home.toUtf8().constData());
+  QString fimg(trUtf8("%1/%2").arg(home).arg(SAMPLE_NAME));
   if(!QDir().exists(home)){
     if(!QDir().mkdir(home)){
       QString msg(trUtf8("ホームディレクトリを作成出来ません\n%1").arg(home));
       QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
       emit toBeAbort();
     }else{
-      QImage img(SAMPLE_IMG);
-      if(!img.isNull()){
-        img.save(QString(trUtf8("%1/%2").arg(home).arg(SAMPLE_NAME)));
-      }
+      if(!img.isNull()) img.save(fimg);
     }
   }
 
@@ -62,7 +60,10 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
-  QModelIndex idx = mModel->index(home); // (QDir::currentPath());
+  // mTree->setRootIndex(mModel->index(home));
+  // QModelIndex idx = mModel->index(QDir::currentPath());
+  QModelIndex idx = mModel->index(img.isNull() ? home : fimg);
+  mTree->setCurrentIndex(idx);
   mTree->expand(idx);
   mTree->scrollTo(idx);
   mTree->resizeColumnToContents(0);
