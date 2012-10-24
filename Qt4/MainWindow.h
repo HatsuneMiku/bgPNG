@@ -11,6 +11,10 @@
 #include <QSystemTrayIcon>
 #include <QtSql>
 #include <QFileInfo>
+#include <QDirModel>
+#include <QTreeView>
+#include <QLineEdit>
+#include <QTextEdit>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -60,6 +64,7 @@ signals:
 
 public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
+  void treeActivated(const QModelIndex &idx);
   void chase();
   void fin();
   void cleanupcode();

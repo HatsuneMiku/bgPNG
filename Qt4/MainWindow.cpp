@@ -73,6 +73,10 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTrayIcon->show();
   show();
 
+  connect(mTree, SIGNAL(activated(const QModelIndex &)),
+    this, SLOT(treeActivated(const QModelIndex &)));
+  treeActivated(idx);
+
   QString fname(trUtf8("%1/%2").arg(home).arg(APP_DATA));
   db = QSqlDatabase::addDatabase(APP_DB);
   db.setDatabaseName(fname);
@@ -393,6 +397,14 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
   default:
     ;
   }
+}
+
+void MainWindow::treeActivated(const QModelIndex &idx)
+{
+  if(mModel->isDir(idx)) return;
+  QString p(mModel->filePath(idx));
+  if(QFileInfo(p).suffix().toLower() != "png") return;
+  mText->setPlainText(p);
 }
 
 void MainWindow::chase()
