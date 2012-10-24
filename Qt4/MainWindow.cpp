@@ -8,11 +8,23 @@
 
 using namespace std;
 
+ChaserWidget::ChaserWidget(QWidget *parent, Qt::WindowFlags flags) :
+  QWidget(parent, flags)
+{
+}
+
+void ChaserWidget::paintEvent(QPaintEvent *ev)
+{
+  if(pixmap.isNull()) return;
+  QPainter p(this);
+  p.drawPixmap(0, 0, pixmap);
+}
+
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
-  hwnd(0), prev_window(0), th(0), quelst(q),
+  hwnd(0), prev_window(0), cw(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
-  mHANDLE(0), mText(0), mWidget(0), mModel(0), mTree(0),
+  mHANDLE(0), mText(0), mModel(0), mTree(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
   mTrayIcon(0), mTrayIconMenu(0)
 {
@@ -271,14 +283,6 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
   }
 }
 
-void MainWindow::paintEvent(QPaintEvent *ev)
-{
-  QMainWindow::paintEvent(ev);
-  if(!mWidget || pixmap.isNull()) return;
-  QPainter p(mWidget);
-  p.drawPixmap(0, 0, pixmap);
-}
-
 void MainWindow::createActions()
 {
   mChaseAction = new QAction(QIcon(":/qrc/icon_chase"),
@@ -359,9 +363,9 @@ void MainWindow::createDockWindows()
   QVBoxLayout *vbL1 = new QVBoxLayout();
   mText = new QTextEdit(trUtf8("データ"), dockL1);
   vbL1->addWidget(mText);
-  mWidget = new QWidget(dockL1);
-  mWidget->setMinimumSize(QSize(160, 320));
-  vbL1->addWidget(mWidget);
+  cw = new ChaserWidget(dockL1);
+  cw->setMinimumSize(QSize(160, 320));
+  vbL1->addWidget(cw);
   wL1->setLayout(vbL1);
   dockL1->setWidget(wL1);
   addDockWidget(Qt::LeftDockWidgetArea, dockL1);
@@ -424,7 +428,8 @@ void MainWindow::treeActivated(const QModelIndex &idx)
   if(img.isNull())
     qDebug("PNG is null: %s", path.toUtf8().constData());
   else
-    pixmap = QPixmap::fromImage(img.convertToFormat(QImage::Format_ARGB32));
+    cw->pixmap = QPixmap::fromImage(
+      img.convertToFormat(QImage::Format_ARGB32));
 }
 
 void MainWindow::chase()

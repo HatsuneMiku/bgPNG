@@ -32,6 +32,20 @@
 #define APP_DATA APP_NAME".sl3"
 #define APP_DB "QSQLITE"
 
+class ChaserWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  ChaserWidget(QWidget *parent=0, Qt::WindowFlags flags=0);
+  virtual ~ChaserWidget(){}
+
+protected:
+  void paintEvent(QPaintEvent *ev);
+
+public:
+  QPixmap pixmap;
+};
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -50,7 +64,6 @@ protected:
   void mouseMoveEvent(QMouseEvent *ev);
   void mousePressEvent(QMouseEvent *ev);
   void mouseReleaseEvent(QMouseEvent *ev);
-  void paintEvent(QPaintEvent *ev);
 
 private:
   void createActions();
@@ -71,8 +84,8 @@ public slots:
   void cleanupcode();
 
 private:
-  QPixmap pixmap;
   ulong hwnd, prev_window;
+  ChaserWidget *cw;
   ChaseThread *th;
   QQueue<QString> &quelst;
   QSqlDatabase db;
@@ -84,7 +97,6 @@ private:
   QToolBar *mFileToolBar;
   QLineEdit *mHANDLE;
   QTextEdit *mText;
-  QWidget *mWidget;
   QDirModel *mModel;
   QTreeView *mTree;
 
