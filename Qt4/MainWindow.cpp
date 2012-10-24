@@ -13,6 +13,13 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QMainWindow(parent, flags), hwnd(0), prev_window(0), quelst(q)
 {
   QIcon ico = QIcon(APP_ICON);
+  QImage img(SAMPLE_IMG);
+  if(!img.isNull()){
+    QPixmap pixmap = QPixmap::fromImage(
+      img.convertToFormat(QImage::Format_ARGB32));
+    ico = QIcon(pixmap.scaled(32 * pixmap.width() / pixmap.height(), 32,
+      Qt::KeepAspectRatio, Qt::FastTransformation));
+  }
   setWindowIcon(ico);
   setWindowTitle(trUtf8(APP_NAME));
   resize(960, 480);
@@ -20,13 +27,18 @@ MainWindow::MainWindow(QQueue<QString> &q,
   connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanupcode()));
   connect(this, SIGNAL(toBeAbort()), qApp, SLOT(quit()));
 
-  home = QString(trUtf8("%1/_%2").arg(QDir::homePath()).arg(APP_NAME));
+  home = QString(trUtf8("%1/.%2").arg(QDir::homePath()).arg(APP_NAME));
   qDebug("home: %s", home.toUtf8().constData());
   if(!QDir().exists(home)){
     if(!QDir().mkdir(home)){
       QString msg(trUtf8("ホームディレクトリを作成出来ません\n%1").arg(home));
       QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
       emit toBeAbort();
+    }else{
+      QImage img(SAMPLE_IMG);
+      if(!img.isNull()){
+        img.save(QString(trUtf8("%1/%2").arg(home).arg(SAMPLE_NAME)));
+      }
     }
   }
 
