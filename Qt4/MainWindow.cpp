@@ -368,9 +368,12 @@ void MainWindow::createDockWindows()
   QWidget *wL1 = new QWidget();
   QVBoxLayout *vbL1 = new QVBoxLayout();
   mText = new QTextEdit(trUtf8("データ"), dockL1);
+  mText->setMinimumSize(QSize(160, 40));
+  mText->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   vbL1->addWidget(mText);
   cw = new ChaserWidget(dockL1);
   cw->setMinimumSize(QSize(160, 320));
+  cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   vbL1->addWidget(cw);
   wL1->setLayout(vbL1);
   dockL1->setWidget(wL1);
