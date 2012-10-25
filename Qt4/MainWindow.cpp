@@ -22,9 +22,7 @@ void ChaserWidget::paintEvent(QPaintEvent *ev)
 #if 1
   double q = (double)w / (double)h;
   double r = (double)pixmap.width() / (double)pixmap.height();
-  p.drawPixmap(0, 0,
-    (r <= q && r < 1.0) ? (int)(r * h) : w,
-    (r <= q && r < 1.0) ? h : (int)(w / r),
+  p.drawPixmap(0, 0, r <= q ? (int)(r * h) : w, r <= q ? h : (int)(w / r),
     pixmap, 0, 0, pixmap.width(), pixmap.height());
 #else
   p.drawPixmap(0, 0,
