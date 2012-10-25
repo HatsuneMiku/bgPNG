@@ -17,9 +17,12 @@ void ChaserWidget::paintEvent(QPaintEvent *ev)
 {
   if(pixmap.isNull()) return;
   QPainter p(this);
-  double r = (double)pixmap.width() / (double)pixmap.height();
   int w = width(), h = height();
-  p.drawPixmap(0, 0, r < 1.0 ? (int)(r * h) : w, r < 1.0 ? h : (int)(w / r),
+  double q = (double)w / (double)h;
+  double r = (double)pixmap.width() / (double)pixmap.height();
+  p.drawPixmap(0, 0,
+    (r <= q && r < 1.0) ? (int)(r * h) : w,
+    (r <= q && r < 1.0) ? h : (int)(w / r),
     pixmap, 0, 0, pixmap.width(), pixmap.height());
 }
 
@@ -435,7 +438,14 @@ void MainWindow::treeActivated(const QModelIndex &idx)
     for(int y = 0; y < img2.height(); y++){
       QRgb *row = (QRgb *)img2.scanLine(y);
       for(int x = 0; x < img2.width(); x++){
-        ((uchar *)&row[x])[3] = 0x30;
+        uchar *b = (uchar *)&row[x];
+        ushort s = b[0] + b[1] + b[2];
+        if(!s) b[3] = 0x08;
+        else{
+          // b[3] = (uchar)(0.8 * (255 - s / 3));
+          // b[3] = (uchar)(255 - s / 3);
+          b[3] = (uchar)(255 - 0.8 * (s / 3));
+        }
       }
     }
     cw->pixmap = QPixmap::fromImage(img2);
