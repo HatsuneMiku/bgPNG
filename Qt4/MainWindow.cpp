@@ -19,13 +19,15 @@ void ChaserWidget::paintEvent(QPaintEvent *ev)
   QPainter p(this);
   // p.setBackgroundMode(Qt::TransparentMode); // default
   int w = width(), h = height();
-#if 0
   double q = (double)w / (double)h;
   double r = (double)pixmap.width() / (double)pixmap.height();
-  p.drawPixmap(0, 0, r <= q ? (int)(r * h) : w, r <= q ? h : (int)(w / r),
+  int dst_w = r <= q ? (int)(r * h) : w;
+  int dst_h = r <= q ? h : (int)(w / r);
+#if 0
+  p.drawPixmap(w - dst_w, h - dst_h, dst_w, dst_h,
     pixmap, 0, 0, pixmap.width(), pixmap.height());
 #else
-  p.drawPixmap(0, 0,
+  p.drawPixmap(w - dst_w, h - dst_h,
     pixmap.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 #endif
 }
