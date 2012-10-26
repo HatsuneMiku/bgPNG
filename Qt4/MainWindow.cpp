@@ -19,7 +19,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   if(!img.isNull()){
     QPixmap pixmap = QPixmap::fromImage(customRGBA(img));
     ico = QIcon(
-      pixmap.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   }
   setWindowIcon(ico);
   setWindowTitle(trUtf8(APP_NAME));
@@ -350,10 +350,12 @@ QImage MainWindow::customRGBA(const QImage &img)
       uchar *b = (uchar *)&row[x];
       ushort s = b[0] + b[1] + b[2];
       if(!s) b[3] = 0x08;
+      else if(s == 255 * 3) b[3] = 0x00;
       else{
         // b[3] = (uchar)(0.8 * (255 - s / 3));
-        b[3] = (uchar)(255 - s / 3);
+        // b[3] = (uchar)(255 - s / 3);
         // b[3] = (uchar)(255 - 0.8 * (s / 3));
+        b[3] = (uchar)(255 - 0.4 * (s / 3));
       }
     }
   }
