@@ -15,13 +15,10 @@
 #include <QTreeView>
 #include <QLineEdit>
 #include <QTextEdit>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <cstring>
 
 #include "bgPNG.h"
 #include "ChaseThread.h"
+#include "ChaserWidget.h"
 
 #define SAMPLE_NAME "claudia.png"
 #define SAMPLE_IMG ":/qrc/img_sample"
@@ -31,20 +28,6 @@
 #define APP_CONF APP_NAME".qtd"
 #define APP_DATA APP_NAME".sl3"
 #define APP_DB "QSQLITE"
-
-class ChaserWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  ChaserWidget(QWidget *parent=0, Qt::WindowFlags flags=0);
-  virtual ~ChaserWidget(){}
-
-protected:
-  void paintEvent(QPaintEvent *ev);
-
-public:
-  QPixmap pixmap;
-};
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -58,12 +41,6 @@ protected:
   void saveLayout();
   void loadLayout();
   void closeEvent(QCloseEvent *ce);
-
-  void drawXORrect(ulong w);
-  int cmpWindowName(char *buf);
-  void mouseMoveEvent(QMouseEvent *ev);
-  void mousePressEvent(QMouseEvent *ev);
-  void mouseReleaseEvent(QMouseEvent *ev);
 
 private:
   void createActions();
@@ -79,12 +56,12 @@ signals:
 public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
   void treeActivated(const QModelIndex &idx);
+  QImage customRGBA(const QImage &img);
   void chase();
   void fin();
   void cleanupcode();
 
 private:
-  ulong hwnd, prev_window;
   ChaserWidget *cw;
   ChaseThread *th;
   QQueue<QString> &quelst;

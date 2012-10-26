@@ -4,37 +4,11 @@
 
 #include "MainWindow.h"
 
-#include <windows.h>
-
 using namespace std;
-
-ChaserWidget::ChaserWidget(QWidget *parent, Qt::WindowFlags flags) :
-  QWidget(parent, flags)
-{
-}
-
-void ChaserWidget::paintEvent(QPaintEvent *ev)
-{
-  if(pixmap.isNull()) return;
-  QPainter p(this);
-  // p.setBackgroundMode(Qt::TransparentMode); // default
-  int w = width(), h = height();
-  double q = (double)w / (double)h;
-  double r = (double)pixmap.width() / (double)pixmap.height();
-  int dst_w = r <= q ? (int)(r * h) : w;
-  int dst_h = r <= q ? h : (int)(w / r);
-#if 0
-  p.drawPixmap(w - dst_w, h - dst_h, dst_w, dst_h,
-    pixmap, 0, 0, pixmap.width(), pixmap.height());
-#else
-  p.drawPixmap(w - dst_w, h - dst_h,
-    pixmap.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-#endif
-}
 
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
-  hwnd(0), prev_window(0), cw(0), th(0), quelst(q),
+  cw(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
   mHANDLE(0), mText(0), mModel(0), mTree(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
@@ -43,10 +17,9 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QIcon ico = QIcon(APP_ICON);
   QImage img(SAMPLE_IMG);
   if(!img.isNull()){
-    QPixmap pixmap = QPixmap::fromImage(
-      img.convertToFormat(QImage::Format_ARGB32));
-    ico = QIcon(pixmap.scaled(32 * pixmap.width() / pixmap.height(), 32,
-      Qt::KeepAspectRatio, Qt::FastTransformation));
+    QPixmap pixmap = QPixmap::fromImage(customRGBA(img));
+    ico = QIcon(
+      pixmap.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   }
   setWindowIcon(ico);
   setWindowTitle(trUtf8(APP_NAME));
@@ -213,88 +186,6 @@ void MainWindow::closeEvent(QCloseEvent *ce)
   }
 }
 
-void MainWindow::drawXORrect(ulong w)
-{
-  RECT r;
-  BOOL result = GetClientRect((HWND)w, &r);
-  if(result){
-    HDC dc = GetDC((HWND)w);
-    HPEN pen = (HPEN)CreatePen(PS_SOLID, 8, RGB(255, 0, 0));
-    HPEN op = (HPEN)SelectObject(dc, pen);
-    // HBRUSH br = (HBRUSH)CreateHatchBrush(HS_BDIAGONAL, RGB(0, 0, 0));
-    HBRUSH br = (HBRUSH)CreateSolidBrush(RGB(15, 15, 15)); // xor
-    HBRUSH ob = (HBRUSH)SelectObject(dc, br);
-    int om = SetBkMode(dc, TRANSPARENT);
-    int orop = SetROP2(dc, R2_XORPEN);
-    Rectangle(dc, r.left, r.top, r.right, r.bottom);
-    SetROP2(dc, orop);
-    SetBkMode(dc, om);
-    SelectObject(dc, ob);
-    DeleteObject(br);
-    SelectObject(dc, op);
-    DeleteObject(pen);
-    ReleaseDC((HWND)w, dc);
-  }
-}
-
-int MainWindow::cmpWindowName(char *buf)
-{
-  static char *exclude[] = {APP_NAME, "msime", "Program Manager"};
-  for(size_t i = 0; i < sizeof(exclude) / sizeof(exclude[0]); i++)
-    if(!strncmp(buf, exclude[i], strlen(exclude[i]))) return 0;
-  return 1;
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *ev)
-{
-  QPoint p = ev->globalPos();
-  // cout << p.x() << ", " << p.y() << endl;
-  HWND w = GetTopWindow(GetDesktopWindow());
-  while(w){
-    if(IsWindowVisible(w)){
-      RECT r;
-      BOOL result = GetWindowRect(w, &r);
-      if(result
-      && QRect(r.left, r.top, r.right - r.left, r.bottom - r.top).contains(p)){
-        if(w == (HWND)prev_window) break;
-        if(prev_window) drawXORrect(prev_window);
-        char buf[1024];
-        if(GetWindowTextA(w, buf, sizeof(buf))){
-          if(!cmpWindowName(buf)){
-            prev_window = hwnd = 0;
-            mHANDLE->clear();
-            break;
-          }
-          drawXORrect(prev_window = hwnd = (ulong)w);
-          ostringstream oss;
-          oss << setw(8) << setfill('0') << hex << right << hwnd;
-          oss << " w[" << buf << "]";
-          char cls[1024];
-          if(GetClassNameA(w, cls, sizeof(cls))){
-            oss << " c[" << cls << "]";
-          }
-          mHANDLE->setText(QString(oss.str().c_str()));
-        }
-        break;
-      }
-    }
-    w = GetWindow(w, GW_HWNDNEXT);
-  }
-}
-
-void MainWindow::mousePressEvent(QMouseEvent *ev)
-{
-  // if(ev->button() == Qt::RightButton) releaseMouse();
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
-{
-  if(prev_window){
-    drawXORrect(prev_window);
-    prev_window = 0;
-  }
-}
-
 void MainWindow::createActions()
 {
   mChaseAction = new QAction(QIcon(":/qrc/icon_chase"),
@@ -377,9 +268,12 @@ void MainWindow::createDockWindows()
   mText->setMinimumSize(QSize(160, 40));
   mText->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   vbL1->addWidget(mText);
-  cw = new ChaserWidget(dockL1);
+  cw = new ChaserWidget(APP_NAME, dockL1);
   cw->setMinimumSize(QSize(160, 320));
   cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  connect(cw, SIGNAL(clear()), mHANDLE, SLOT(clear()));
+  connect(cw, SIGNAL(handle(const QString &)),
+    mHANDLE, SLOT(setText(const QString &)));
   vbL1->addWidget(cw);
   wL1->setLayout(vbL1);
   dockL1->setWidget(wL1);
@@ -440,32 +334,32 @@ void MainWindow::treeActivated(const QModelIndex &idx)
   if(QFileInfo(path).suffix().toLower() != "png") return;
   mText->setPlainText(path);
   QImage img(path);
-  if(img.isNull()){
-    qDebug("PNG is null: %s", path.toUtf8().constData());
-  }else{
-    QImage img2 = img.convertToFormat(QImage::Format_ARGB32);
-    for(int y = 0; y < img2.height(); y++){
-      QRgb *row = (QRgb *)img2.scanLine(y);
-      for(int x = 0; x < img2.width(); x++){
-        uchar *b = (uchar *)&row[x];
-        ushort s = b[0] + b[1] + b[2];
-        if(!s) b[3] = 0x08;
-        else{
-          // b[3] = (uchar)(0.8 * (255 - s / 3));
-          // b[3] = (uchar)(255 - s / 3);
-          b[3] = (uchar)(255 - 0.8 * (s / 3));
-        }
+  if(img.isNull()) qDebug("PNG is null: %s", path.toUtf8().constData());
+  else cw->setPixmap(QPixmap::fromImage(customRGBA(img)));
+}
+
+QImage MainWindow::customRGBA(const QImage &img)
+{
+  QImage img2 = img.convertToFormat(QImage::Format_ARGB32);
+  for(int y = 0; y < img2.height(); y++){
+    QRgb *row = (QRgb *)img2.scanLine(y);
+    for(int x = 0; x < img2.width(); x++){
+      uchar *b = (uchar *)&row[x];
+      ushort s = b[0] + b[1] + b[2];
+      if(!s) b[3] = 0x08;
+      else{
+        // b[3] = (uchar)(0.8 * (255 - s / 3));
+        b[3] = (uchar)(255 - s / 3);
+        // b[3] = (uchar)(255 - 0.8 * (s / 3));
       }
     }
-    cw->pixmap = QPixmap::fromImage(img2);
-    cw->setUpdatesEnabled(true);
-    cw->update(); // cw->repaint();
   }
+  return img2;
 }
 
 void MainWindow::chase()
 {
-  // grabMouse(QCursor(QIcon(APP_ICON).pixmap(32, 32)));
+  // signal to cw grabMouse(QCursor(windowIcon().pixmap(32, 32)));
 
   QString handle(mHANDLE->text());
 
