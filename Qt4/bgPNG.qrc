@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/qrc">
+  <file alias="img_sample_jp">../resource/窓辺.png</file>
   <file alias="img_sample">../resource/claudia.png</file>
   <file alias="icon_bgPNG">../icons/bgPNG.png</file>
   <file alias="icon_chase">../icons/bottom.png</file>

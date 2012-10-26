@@ -8,7 +8,7 @@
 
 using namespace std;
 
-ChaserWidget::ChaserWidget(const char *name,
+ChaserWidget::ChaserWidget(const QString &name,
   QWidget *parent, Qt::WindowFlags flags) : QWidget(parent, flags),
   self_name(name), hwnd(0), prev_window(0)
 {

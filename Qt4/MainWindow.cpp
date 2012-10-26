@@ -14,7 +14,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
   mTrayIcon(0), mTrayIconMenu(0)
 {
-  QIcon ico = QIcon(APP_ICON);
+  QIcon ico = QIcon(trUtf8(APP_ICON));
   QImage img(SAMPLE_IMG);
   if(!img.isNull()){
     QPixmap pixmap = QPixmap::fromImage(customRGBA(img));
@@ -28,9 +28,9 @@ MainWindow::MainWindow(QQueue<QString> &q,
   connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanupcode()));
   connect(this, SIGNAL(toBeAbort()), qApp, SLOT(quit()));
 
-  home = QString(trUtf8("%1/.%2").arg(QDir::homePath()).arg(APP_NAME));
+  home = QString(trUtf8("%1/.%2").arg(QDir::homePath()).arg(trUtf8(APP_NAME)));
   qDebug("home: %s", home.toUtf8().constData());
-  QString fimg(trUtf8("%1/%2").arg(home).arg(SAMPLE_NAME));
+  QString fimg(trUtf8("%1/%2").arg(home).arg(trUtf8(SAMPLE_NAME)));
   if(!QDir().exists(home)){
     if(!QDir().mkdir(home)){
       QString msg(trUtf8("ホームディレクトリを作成出来ません\n%1").arg(home));
@@ -38,6 +38,9 @@ MainWindow::MainWindow(QQueue<QString> &q,
       emit toBeAbort();
     }else{
       if(!img.isNull()) img.save(fimg);
+      QString fimg_jp(trUtf8("%1/%2").arg(home).arg(trUtf8(SAMPLE_NAME_JP)));
+      QImage img_jp(SAMPLE_IMG_JP);
+      if(!img_jp.isNull()) img_jp.save(fimg_jp);
     }
   }
 
@@ -78,8 +81,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
     this, SLOT(treeActivated(const QModelIndex &)));
   treeActivated(idx);
 
-  QString fname(trUtf8("%1/%2").arg(home).arg(APP_DATA));
-  db = QSqlDatabase::addDatabase(APP_DB);
+  QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_DATA)));
+  db = QSqlDatabase::addDatabase(trUtf8(APP_DB));
   db.setDatabaseName(fname);
   if(!QFileInfo(fname).exists()){
     if(!db.open()){
@@ -124,7 +127,7 @@ void MainWindow::proc()
 
 void MainWindow::saveLayout()
 {
-  QString fname(trUtf8("%1/%2").arg(home).arg(APP_CONF));
+  QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_CONF)));
   QFile file(fname);
   if(!file.open(QFile::WriteOnly)){
     QString msg(trUtf8("レイアウトファイルをオープン出来ません(W) %1\n%2")
@@ -147,7 +150,7 @@ void MainWindow::saveLayout()
 
 void MainWindow::loadLayout()
 {
-  QString fname(trUtf8("%1/%2").arg(home).arg(APP_CONF));
+  QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_CONF)));
   if(!QFileInfo(fname).exists()) return;
   QFile file(fname);
   if(!file.open(QFile::ReadOnly)){
@@ -268,7 +271,7 @@ void MainWindow::createDockWindows()
   mText->setMinimumSize(QSize(160, 40));
   mText->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   vbL1->addWidget(mText);
-  cw = new ChaserWidget(APP_NAME, dockL1);
+  cw = new ChaserWidget(trUtf8(APP_NAME), dockL1);
   cw->setMinimumSize(QSize(160, 320));
   cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   connect(cw, SIGNAL(clear()), mHANDLE, SLOT(clear()));

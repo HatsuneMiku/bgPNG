@@ -22,6 +22,8 @@
 
 #define SAMPLE_NAME "claudia.png"
 #define SAMPLE_IMG ":/qrc/img_sample"
+#define SAMPLE_NAME_JP "窓辺.png"
+#define SAMPLE_IMG_JP ":/qrc/img_sample_jp"
 
 #define APP_NAME "bgPNG"
 #define APP_ICON ":/qrc/icon_bgPNG"

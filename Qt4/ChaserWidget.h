@@ -18,7 +18,8 @@ class ChaserWidget : public QWidget {
   Q_OBJECT
 
 public:
-  ChaserWidget(const char *name, QWidget *parent=0, Qt::WindowFlags flags=0);
+  ChaserWidget(const QString &name,
+    QWidget *parent=0, Qt::WindowFlags flags=0);
   virtual ~ChaserWidget(){}
 
 protected:
