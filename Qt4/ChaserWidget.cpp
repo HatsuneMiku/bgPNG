@@ -75,8 +75,8 @@ void ChaserWidget::mouseMoveEvent(QMouseEvent *ev)
           drawXORrect(prev_window = hwnd = (ulong)w);
           char cls[1024];
           if(!GetClassNameA(w, cls, sizeof(cls))) cls[0] = '\0';
-          scls = QString::fromAscii(cls);
-          swnd = QString::fromAscii(buf);
+          scls = QString::fromLocal8Bit(cls); // fromAscii(cls);
+          swnd = QString::fromLocal8Bit(buf); // fromAscii(buf);
           emit hover(hwnd);
         }
         break;
