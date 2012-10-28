@@ -37,7 +37,6 @@ class MainWindow : public QMainWindow {
 public:
   MainWindow(QQueue<QString> &q, QWidget *parent=0, Qt::WindowFlags flags=0);
   virtual ~MainWindow() {}
-  void proc();
 
 protected:
   void saveLayout();
@@ -61,6 +60,7 @@ public slots:
   QImage customRGBA(const QImage &img);
   void hover(ulong hwnd);
   void chase(ulong hwnd=0);
+  void proc();
   void fin();
   void cleanupcode();
 

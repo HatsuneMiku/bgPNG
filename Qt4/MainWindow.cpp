@@ -4,8 +4,6 @@
 
 #include "MainWindow.h"
 
-using namespace std;
-
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
   cw(0), th(0), quelst(q),
@@ -100,29 +98,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
   }
 
   th = new ChaseThread(this);
+  connect(th, SIGNAL(proc()), this, SLOT(proc()));
   th->start();
-}
-
-void MainWindow::proc()
-{
-  // 再入禁止?
-  if(quelst.isEmpty()) return;
-  if(!db.open()){
-    QString msg(trUtf8("データベースを開けません"));
-    QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
-  }else{
-    db.transaction();
-    QSqlQuery q;
-    while(!quelst.isEmpty()){
-      QString link(quelst.dequeue());
-      QString v(trUtf8("'%1', '%2', %3").arg(link).arg(link).arg(0));
-      // sqlite は複数の values を連結出来ないらしい
-      q.exec(trUtf8("insert into testtable (c1, c2, c3) values (%1);").arg(v));
-    }
-    q.clear();
-    if(!db.commit()) db.rollback();
-    db.close();
-  }
 }
 
 void MainWindow::saveLayout()
@@ -386,6 +363,28 @@ void MainWindow::chase(ulong hwnd)
   QTextCodec *jp = QTextCodec::codecForName("utf-8");
   bp456->getb(jp->fromUnicode(mHANDLE->text()));
   // delete jp;
+}
+
+void MainWindow::proc()
+{
+  // 再入禁止?
+  if(quelst.isEmpty()) return;
+  if(!db.open()){
+    QString msg(trUtf8("データベースを開けません"));
+    QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
+  }else{
+    db.transaction();
+    QSqlQuery q;
+    while(!quelst.isEmpty()){
+      QString link(quelst.dequeue());
+      QString v(trUtf8("'%1', '%2', %3").arg(link).arg(link).arg(0));
+      // sqlite は複数の values を連結出来ないらしい
+      q.exec(trUtf8("insert into testtable (c1, c2, c3) values (%1);").arg(v));
+    }
+    q.clear();
+    if(!db.commit()) db.rollback();
+    db.close();
+  }
 }
 
 void MainWindow::fin()

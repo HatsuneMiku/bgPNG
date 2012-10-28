@@ -2,8 +2,7 @@
   ChaseThread.cpp
 */
 
-#include "MainWindow.h" // MainWindow * にアクセスするので必要
-// #include "ChaseThread.h" // 上で読まれるのでこちらは省略
+#include "ChaseThread.h"
 
 ChaseThread::ChaseThread(QObject *parent) : QThread(parent), stopped(FALSE)
 {
@@ -21,12 +20,13 @@ void ChaseThread::run()
     // 今のところ二重に呼ばれる訳ではない
     {
       QMutexLocker locker(&mutex);
-      ((MainWindow *)parent())->proc();
+      emit proc();
     }
     usleep(100000);
   }
   stopped = FALSE;
   // exec();
+  // quit();
 }
 
 void ChaseThread::active()

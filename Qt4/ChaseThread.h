@@ -19,7 +19,7 @@ public:
   void stop();
 
 signals:
-  //
+  void proc();
 
 private slots:
   void run();
