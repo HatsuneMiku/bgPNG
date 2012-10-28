@@ -275,8 +275,8 @@ void MainWindow::createDockWindows()
   cw->setMinimumSize(QSize(160, 320));
   cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   connect(cw, SIGNAL(clear()), mHANDLE, SLOT(clear()));
-  connect(cw, SIGNAL(handle(const QString &)),
-    mHANDLE, SLOT(setText(const QString &)));
+  connect(cw, SIGNAL(dropped(ulong, const QString &, const QString &)),
+    this, SLOT(chase(ulong, const QString &, const QString &)));
   vbL1->addWidget(cw);
   wL1->setLayout(vbL1);
   dockL1->setWidget(wL1);
@@ -362,11 +362,14 @@ QImage MainWindow::customRGBA(const QImage &img)
   return img2;
 }
 
-void MainWindow::chase()
+void MainWindow::chase(ulong hwnd, const QString &swnd, const QString &scls)
 {
+  if(!hwnd) return;
   // signal to cw grabMouse(QCursor(windowIcon().pixmap(32, 32)));
 
-  QString handle(mHANDLE->text());
+  QString handle(trUtf8("%1 w[%2] c[%3]")
+    .arg(hwnd, 8, 16, QChar('0')).arg(swnd).arg(scls));
+  mHANDLE->setText(handle);
 
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
   bgPNG *bp123 = new bgPNG(123);

@@ -9,7 +9,6 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <QMutex>
-#include <iostream>
 
 class ChaseThread : public QThread {
   Q_OBJECT

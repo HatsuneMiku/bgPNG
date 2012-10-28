@@ -45,7 +45,7 @@ void ChaserWidget::drawXORrect(ulong w)
 int ChaserWidget::cmpWindowName(char *buf)
 {
   for(size_t i = 0; i < exclude.size(); i++)
-    if(!strncmp(buf, exclude[i].c_str(), strlen(exclude[i].c_str()))) return 0;
+    if(!exclude[i].compare(buf)) return 0;
   return 1;
 }
 
@@ -70,14 +70,10 @@ void ChaserWidget::mouseMoveEvent(QMouseEvent *ev)
             break;
           }
           drawXORrect(prev_window = hwnd = (ulong)w);
-          ostringstream oss;
-          oss << setw(8) << setfill('0') << hex << right << hwnd;
-          oss << " w[" << buf << "]";
           char cls[1024];
-          if(GetClassNameA(w, cls, sizeof(cls))){
-            oss << " c[" << cls << "]";
-          }
-          emit handle(QString(oss.str().c_str()));
+          if(!GetClassNameA(w, cls, sizeof(cls))) cls[0] = '\0';
+          emit dropped(hwnd,
+            QString::fromLocal8Bit(buf), QString::fromLocal8Bit(cls));
         }
         break;
       }

@@ -8,11 +8,7 @@
 #include <QtGui>
 #include <QWidget>
 #include <vector>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <cstring>
 
 class ChaserWidget : public QWidget {
   Q_OBJECT
@@ -32,7 +28,7 @@ protected:
 
 signals:
   void clear();
-  void handle(const QString &txt);
+  void dropped(ulong hwnd, const QString &swnd, const QString &scls);
 
 public slots:
   void setPixmap(const QPixmap &pm);

@@ -59,7 +59,7 @@ public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
   void treeActivated(const QModelIndex &idx);
   QImage customRGBA(const QImage &img);
-  void chase();
+  void chase(ulong hwnd=0, const QString &swnd=0, const QString &scls=0);
   void fin();
   void cleanupcode();
 
