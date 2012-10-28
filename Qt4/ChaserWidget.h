@@ -16,11 +16,13 @@ class ChaserWidget : public QWidget {
 public:
   ChaserWidget(const QString &name,
     QWidget *parent=0, Qt::WindowFlags flags=0);
-  virtual ~ChaserWidget(){}
+  virtual ~ChaserWidget() {}
+  const QString &getScls(void) { return scls; }
+  const QString &getSwnd(void) { return swnd; }
 
 protected:
   void drawXORrect(ulong w);
-  int cmpWindowName(char *buf);
+  int cmpWindowName(const char *buf);
   void mouseMoveEvent(QMouseEvent *ev);
   void mousePressEvent(QMouseEvent *ev);
   void mouseReleaseEvent(QMouseEvent *ev);
@@ -28,7 +30,8 @@ protected:
 
 signals:
   void clear();
-  void dropped(ulong hwnd, const QString &swnd, const QString &scls);
+  void hover(ulong hwnd);
+  void dropped(ulong hwnd);
 
 public slots:
   void setPixmap(const QPixmap &pm);
@@ -38,6 +41,8 @@ private:
   QString self_name;
   std::vector<std::string> exclude;
   ulong hwnd, prev_window;
+  QString scls, swnd;
+  bool dragging;
 };
 
 #endif // __CHASERWIDGET_H__

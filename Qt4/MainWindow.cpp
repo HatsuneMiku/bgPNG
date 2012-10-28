@@ -275,8 +275,8 @@ void MainWindow::createDockWindows()
   cw->setMinimumSize(QSize(160, 320));
   cw->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   connect(cw, SIGNAL(clear()), mHANDLE, SLOT(clear()));
-  connect(cw, SIGNAL(dropped(ulong, const QString &, const QString &)),
-    this, SLOT(chase(ulong, const QString &, const QString &)));
+  connect(cw, SIGNAL(hover(ulong)), this, SLOT(hover(ulong)));
+  connect(cw, SIGNAL(dropped(ulong)), this, SLOT(chase(ulong)));
   vbL1->addWidget(cw);
   wL1->setLayout(vbL1);
   dockL1->setWidget(wL1);
@@ -362,25 +362,29 @@ QImage MainWindow::customRGBA(const QImage &img)
   return img2;
 }
 
-void MainWindow::chase(ulong hwnd, const QString &swnd, const QString &scls)
+void MainWindow::hover(ulong hwnd)
+{
+  if(!hwnd) return;
+  QString handle(trUtf8("%1 w[%2] c[%3]")
+    .arg(hwnd, 8, 16, QChar('0')).arg(cw->getSwnd()).arg(cw->getScls()));
+  mHANDLE->setText(handle);
+}
+
+void MainWindow::chase(ulong hwnd)
 {
   if(!hwnd) return;
   // signal to cw grabMouse(QCursor(windowIcon().pixmap(32, 32)));
 
-  QString handle(trUtf8("%1 w[%2] c[%3]")
-    .arg(hwnd, 8, 16, QChar('0')).arg(swnd).arg(scls));
-  mHANDLE->setText(handle);
-
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
   bgPNG *bp123 = new bgPNG(123);
   connect(bp123, SIGNAL(done()), this, SLOT(fin()));
-  bp123->get(handle);
+  bp123->get(mHANDLE->text());
 
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
   bgPNG *bp456 = new bgPNG(456);
   connect(bp456, SIGNAL(done()), this, SLOT(fin()));
   QTextCodec *jp = QTextCodec::codecForName("utf-8");
-  bp456->getb(jp->fromUnicode(handle));
+  bp456->getb(jp->fromUnicode(mHANDLE->text()));
   // delete jp;
 }
 

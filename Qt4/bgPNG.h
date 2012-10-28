@@ -18,7 +18,7 @@ public:
   bgPNG(int n, QObject *parent=0);
   int getnum() { return num; }
   int getstat() { return stat; }
-  QByteArray& getdat() { return dat; }
+  QByteArray &getdat() { return dat; }
   void get(const QString &s);
   void getb(const QByteArray &b);
 

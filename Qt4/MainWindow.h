@@ -36,7 +36,7 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow(QQueue<QString> &q, QWidget *parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow(){}
+  virtual ~MainWindow() {}
   void proc();
 
 protected:
@@ -59,7 +59,8 @@ public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
   void treeActivated(const QModelIndex &idx);
   QImage customRGBA(const QImage &img);
-  void chase(ulong hwnd=0, const QString &swnd=0, const QString &scls=0);
+  void hover(ulong hwnd);
+  void chase(ulong hwnd=0);
   void fin();
   void cleanupcode();
 

@@ -10,7 +10,7 @@ using namespace std;
 
 ChaserWidget::ChaserWidget(const QString &name,
   QWidget *parent, Qt::WindowFlags flags) : QWidget(parent, flags),
-  self_name(name), hwnd(0), prev_window(0)
+  self_name(name), hwnd(0), prev_window(0), dragging(false)
 {
   char *work[] = {self_name.toAscii().data(), "msime", "Program Manager"};
   size_t sz = sizeof(work) / sizeof(work[0]);
@@ -42,15 +42,16 @@ void ChaserWidget::drawXORrect(ulong w)
   }
 }
 
-int ChaserWidget::cmpWindowName(char *buf)
+int ChaserWidget::cmpWindowName(const char *buf)
 {
-  for(size_t i = 0; i < exclude.size(); i++)
-    if(!exclude[i].compare(buf)) return 0;
+  for(size_t i = 0; i < exclude.size(); i++) if(buf == exclude[i]) return 0;
   return 1;
 }
 
 void ChaserWidget::mouseMoveEvent(QMouseEvent *ev)
 {
+  // if(ev->button() != Qt::LeftButton) return;
+  if(!dragging) dragging = true;
   QPoint p = ev->globalPos();
   // cout << p.x() << ", " << p.y() << endl;
   HWND w = GetTopWindow(GetDesktopWindow());
@@ -66,14 +67,17 @@ void ChaserWidget::mouseMoveEvent(QMouseEvent *ev)
         if(GetWindowTextA(w, buf, sizeof(buf))){
           if(!cmpWindowName(buf)){
             prev_window = hwnd = 0;
+            scls = QString("");
+            swnd = QString("");
             emit clear();
             break;
           }
           drawXORrect(prev_window = hwnd = (ulong)w);
           char cls[1024];
           if(!GetClassNameA(w, cls, sizeof(cls))) cls[0] = '\0';
-          emit dropped(hwnd,
-            QString::fromLocal8Bit(buf), QString::fromLocal8Bit(cls));
+          scls = QString::fromAscii(cls);
+          swnd = QString::fromAscii(buf);
+          emit hover(hwnd);
         }
         break;
       }
@@ -89,9 +93,13 @@ void ChaserWidget::mousePressEvent(QMouseEvent *ev)
 
 void ChaserWidget::mouseReleaseEvent(QMouseEvent *ev)
 {
-  if(prev_window){
-    drawXORrect(prev_window);
-    prev_window = 0;
+  if(dragging){
+    dragging = false;
+    if(prev_window){
+      drawXORrect(prev_window);
+      prev_window = 0;
+    }
+    if(hwnd){ emit dropped(hwnd); }
   }
 }
 
