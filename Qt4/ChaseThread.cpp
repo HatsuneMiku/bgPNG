@@ -1,24 +1,34 @@
 /*
   ChaseThread.cpp
+
+  Must not inherit QThread and must not use moveToThread(this).
+  http://blog.qt.digia.com/2010/06/17/youre-doing-it-wrong/
+  http://blog.qt.digia.com/2006/12/04/threading-without-the-headache/
+  http://vivi.dyndns.org/tech/Qt/QThread.html
 */
 
 #include "ChaseThread.h"
 
-ChaseThread::ChaseThread() : QThread(), timer(this) // fource set parent = 0
+ChaseThread::ChaseThread(QThread *thread) : QObject(), // fource set parent = 0
+  timer(this), th(thread)
 {
-  //qDebug("[ChaseThread before moveToThread: %08x]", (uint)currentThreadId());
-  moveToThread(this);
-  //qDebug("[ChaseThread after moveToThread: %08x]", (uint)currentThreadId());
+  qDebug("[ChaseThread created: %08x]", (uint)th->currentThreadId());
+  this->moveToThread(th);
 }
 
 void ChaseThread::stop()
 {
   timer.stop();
-  //qDebug("[ChaseThread timer stop: %08x]", (uint)currentThreadId());
+  qDebug("[ChaseThread timer stop: %08x]", (uint)th->currentThreadId());
 }
 
 void ChaseThread::chase()
 {
+  static int i = 0;
+  if(++i > 200){
+    qDebug("[ChaseThread chase: %08x]", (uint)th->currentThreadId());
+    i = 0;
+  }
   // 今のところ二重に呼ばれる訳ではない
   {
     QMutexLocker locker(&mutex);
@@ -26,14 +36,11 @@ void ChaseThread::chase()
   }
 }
 
-void ChaseThread::run()
+void ChaseThread::started()
 {
-  //qDebug("[ChaseThread run(in): %08x]", (uint)currentThreadId());
-  //qDebug("[ChaseThread timer start: %08x]", (uint)currentThreadId());
+  qDebug("[ChaseThread timer start: %08x]", (uint)th->currentThreadId());
   connect(&timer, SIGNAL(timeout()), this, SLOT(chase()));
   timer.start(50); // QTimer can only be used with threads started with QThread
-  QThread::run(); // exec(); to catch signals (must call moveToThread() before)
-  //qDebug("[ChaseThread run(out): %08x]", (uint)currentThreadId());
 }
 
 void ChaseThread::active()

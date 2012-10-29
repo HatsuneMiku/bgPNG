@@ -6,7 +6,7 @@
 
 MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
-  cw(0), th(0), quelst(q),
+  cw(0), ct(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
   mHANDLE(0), mText(0), mDirModel(0), mTree(0), mFileModel(0), mList(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
@@ -126,11 +126,18 @@ MainWindow::MainWindow(QQueue<QString> &q,
     }
   }
 
-  th = new ChaseThread();
+  th = new QThread();
+  ct = new ChaseThread(th);
   connect(this, SIGNAL(quit()), th, SLOT(quit()));
-  connect(this, SIGNAL(stop()), th, SLOT(stop()));
-  connect(th, SIGNAL(proc()), this, SLOT(proc()));
+  connect(this, SIGNAL(stop()), ct, SLOT(stop()));
+  connect(ct, SIGNAL(proc()), this, SLOT(proc()));
+  connect(th, SIGNAL(started()), ct, SLOT(started()));
   th->start();
+}
+
+MainWindow::~MainWindow()
+{
+  if(th){ delete th; th = 0; } // auto delete ct
 }
 
 void MainWindow::saveLayout()
@@ -341,13 +348,15 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 void MainWindow::treeActivated(const QModelIndex &idx)
 {
   if(!mDirModel->isDir(idx)) return;
-  mList->setRootIndex(mFileModel->index(mDirModel->filePath(idx)));
+  QString path(mDirModel->fileInfo(idx).absoluteFilePath());
+  qDebug("tree: %s", qPrintable(path));
+  mList->setRootIndex(mFileModel->setRootPath(path));
 }
 
 void MainWindow::listActivated(const QModelIndex &idx)
 {
   if(mFileModel->isDir(idx)) return;
-  QString path(mFileModel->filePath(idx));
+  QString path(mFileModel->fileInfo(idx).absoluteFilePath());
   if(QFileInfo(path).suffix().toLower() != "png") return;
   mText->setPlainText(path);
   QImage img(path);
@@ -462,9 +471,9 @@ void MainWindow::fin()
 void MainWindow::cleanupcode()
 {
   qDebug("running clean up code...");
-  //Qt::HANDLE id = QApplication::instance()->thread()->currentThreadId();
-  //qDebug("[main thread: %08x]", (uint)id);
-  emit stop(); emit quit(); // call exec() in the thread when using signals
+  Qt::HANDLE id = QApplication::instance()->thread()->currentThreadId();
+  qDebug("[main thread: %08x]", (uint)id);
+  emit stop(); emit quit();
   qDebug("waiting for sub thread finalize...");
   while(!th->isFinished()){
     std::cerr << ".";
@@ -473,8 +482,8 @@ void MainWindow::cleanupcode()
     QWaitCondition cond;
     cond.wait(&mutex, 5);
   }
-  //qDebug("done.");
-  //qDebug("saving layout...");
+  qDebug("done.");
+  qDebug("saving layout...");
   saveLayout();
   qDebug("application is cleaned up.");
 }

@@ -37,7 +37,7 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow(QQueue<QString> &q, QWidget *parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow() {}
+  virtual ~MainWindow();
 
 protected:
   void saveLayout();
@@ -70,7 +70,8 @@ public slots:
 
 private:
   ChaserWidget *cw;
-  ChaseThread *th;
+  ChaseThread *ct;
+  QThread *th;
   QQueue<QString> &quelst;
   QSqlDatabase db;
   QString home;

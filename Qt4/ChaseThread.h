@@ -11,12 +11,12 @@
 #include <QMutex>
 #include <QTimer>
 
-class ChaseThread : public QThread {
+class ChaseThread : public QObject {
   Q_OBJECT
   Q_DISABLE_COPY(ChaseThread)
 
 public:
-  ChaseThread();
+  ChaseThread(QThread *thread);
 
 signals:
   void proc();
@@ -26,11 +26,12 @@ public slots:
 
 private slots:
   void chase();
-  void run();
+  void started();
   void active();
 
 private:
   QTimer timer;
+  QThread *th;
   mutable QMutex mutex;
   QWaitCondition cond;
 };
