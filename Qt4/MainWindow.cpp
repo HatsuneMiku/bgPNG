@@ -98,6 +98,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   }
 
   th = new ChaseThread(this);
+  connect(this, SIGNAL(stop()), th, SLOT(stop()));
   connect(th, SIGNAL(proc()), this, SLOT(proc()));
   th->start();
 }
@@ -421,9 +422,11 @@ void MainWindow::fin()
 
 void MainWindow::cleanupcode()
 {
-  qDebug("running clean up code...");
-  th->stop();
-  while(!th->isFinished()){}
+  qDebug("running clean up code... main thread: %08x",
+    (uint)QApplication::instance()->thread()->currentThreadId());
+  emit stop(); // th->stop();
+  while(!th->isFinished())
+    qDebug("waiting for thread: %08x", (uint)th->currentThreadId());
   saveLayout();
   qDebug("application is cleaned up.");
 }

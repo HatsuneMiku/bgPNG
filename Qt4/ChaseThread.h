@@ -16,12 +16,12 @@ class ChaseThread : public QThread {
 
 public:
   ChaseThread(QObject *parent=0);
-  void stop();
 
 signals:
   void proc();
 
 private slots:
+  void stop();
   void run();
   void active();
 
