@@ -62,7 +62,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
-  // mTree->setRootIndex(mModel->index(home));
+  mTree->setRootIndex(mModel->index(home));
   // QModelIndex idx = mModel->index(QDir::currentPath());
   QModelIndex idx = mModel->index(img.isNull() ? home : fimg);
   mTree->setCurrentIndex(idx);
@@ -426,12 +426,17 @@ void MainWindow::fin()
 
 void MainWindow::cleanupcode()
 {
-  qDebug("running clean up code... main thread: %08x",
+  qDebug("running clean up code... [main thread: %08x]",
     (uint)QApplication::instance()->thread()->currentThreadId());
-  qDebug("waiting for sub thread: %08x",
-    (uint)th->currentThreadId()); // Qt::HANDLE
   emit stop(); emit quit(); // call exec() in the thread when using signals
-  while(!th->isFinished()){ std::cerr << "."; }
+  qDebug("waiting for sub thread...");
+  while(!th->isFinished()){
+    std::cerr << ".";
+    /* mutable */ QMutex mutex;
+    QMutexLocker locker(&mutex);
+    QWaitCondition cond;
+    cond.wait(&mutex, 5);
+  }
   qDebug("done.");
   qDebug("saving layout...");
   saveLayout();
