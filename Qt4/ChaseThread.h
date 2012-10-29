@@ -9,6 +9,7 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <QMutex>
+#include <QTimer>
 
 class ChaseThread : public QThread {
   Q_OBJECT
@@ -24,11 +25,12 @@ public slots:
   void stop();
 
 private slots:
+  void chase();
   void run();
   void active();
 
 private:
-  volatile bool stopped;
+  QTimer timer;
   mutable QMutex mutex;
   QWaitCondition cond;
 };
