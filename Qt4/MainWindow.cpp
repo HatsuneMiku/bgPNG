@@ -52,13 +52,12 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTrayIcon->setToolTip(trUtf8(APP_NAME));
 
   mModel = new QFileSystemModel;
-  mModel->setRootPath(QDir::currentPath());
-/*
   mModel->setReadOnly(true);
+  mModel->setRootPath(home);
+  // mModel->setRootPath(QDir::currentPath());
   // ここで sort すると起動が極端に遅くなる(固まる)のでスキップ
   // (特にネットワークドライブがツリーに含まれていると危険＝起動後でも固まる)
   // mModel->setSorting(QDir::DirsFirst | QDir::IgnoreCase | QDir::Name);
-*/
   mTree = new QTreeView;
   mTree->setModel(mModel);
   mTree->header()->setStretchLastSection(true);
