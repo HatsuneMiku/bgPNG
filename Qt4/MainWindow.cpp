@@ -349,7 +349,7 @@ void MainWindow::treeActivated(const QModelIndex &idx)
 {
   if(!mDirModel->isDir(idx)) return;
   QString path(mDirModel->fileInfo(idx).absoluteFilePath());
-  qDebug("tree: %s", qPrintable(path));
+  // qDebug("tree: %s", qPrintable(path));
   mList->setRootIndex(mFileModel->setRootPath(path));
 }
 
