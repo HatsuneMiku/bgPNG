@@ -428,8 +428,8 @@ void MainWindow::cleanupcode()
 {
   qDebug("running clean up code... [main thread: %08x]",
     (uint)QApplication::instance()->thread()->currentThreadId());
-  th->stop();
-//  emit stop(); emit quit(); // call exec() in the thread when using signals
+  // th->stop();
+  emit stop(); emit quit(); // call exec() in the thread when using signals
   qDebug("waiting for sub thread...");
   while(!th->isFinished()){
     std::cerr << ".";

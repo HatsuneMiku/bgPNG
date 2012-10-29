@@ -7,7 +7,7 @@
 ChaseThread::ChaseThread() : QThread(), stopped(FALSE) // fource set parent = 0
 {
   qDebug("[ChaseThread before moveToThread: %08x]", (uint)currentThreadId());
-//  moveToThread(this);
+  moveToThread(this);
   qDebug("[ChaseThread after moveToThread: %08x]", (uint)currentThreadId());
 }
 
@@ -25,7 +25,7 @@ void ChaseThread::run()
     {
       QMutexLocker locker(&mutex);
       emit proc();
-//    exec(); // event loop to catch signals (must call moveToThread() before)
+      exec(); // event loop to catch signals (must call moveToThread() before)
     }
     usleep(100000);
   }
