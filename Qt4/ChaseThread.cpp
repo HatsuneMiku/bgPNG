@@ -4,9 +4,9 @@
 
 #include "ChaseThread.h"
 
-ChaseThread::ChaseThread(QObject *parent) : QThread(parent), stopped(FALSE)
+ChaseThread::ChaseThread() : QThread(), stopped(FALSE) // fource set parent = 0
 {
-  // moveToThread(this);
+  moveToThread(this);
 }
 
 void ChaseThread::stop()
@@ -21,12 +21,11 @@ void ChaseThread::run()
     {
       QMutexLocker locker(&mutex);
       emit proc();
+      exec(); // event loop to catch signals (must call moveToThread() before)
     }
     usleep(100000);
   }
   stopped = FALSE;
-  // exec();
-  // quit();
 }
 
 void ChaseThread::active()

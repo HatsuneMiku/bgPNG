@@ -15,13 +15,15 @@ class ChaseThread : public QThread {
   Q_DISABLE_COPY(ChaseThread)
 
 public:
-  ChaseThread(QObject *parent=0);
+  ChaseThread();
 
 signals:
   void proc();
 
-private slots:
+public slots:
   void stop();
+
+private slots:
   void run();
   void active();
 

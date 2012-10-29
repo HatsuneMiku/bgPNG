@@ -97,7 +97,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
     }
   }
 
-  th = new ChaseThread(this);
+  th = new ChaseThread();
+  connect(this, SIGNAL(quit()), th, SLOT(quit()));
   connect(this, SIGNAL(stop()), th, SLOT(stop()));
   connect(th, SIGNAL(proc()), this, SLOT(proc()));
   th->start();
@@ -353,6 +354,9 @@ void MainWindow::chase(ulong hwnd)
   if(!hwnd) return;
   // signal to cw grabMouse(QCursor(windowIcon().pixmap(32, 32)));
 
+  // QMetaObject::invokeMethod(th, "chase", Qt::QueuedConnection,
+  //   /* Q_RETURN_ARG(void, ), */ Q_ARG(ulong, hwnd));
+
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
   bgPNG *bp123 = new bgPNG(123);
   connect(bp123, SIGNAL(done()), this, SLOT(fin()));
@@ -424,9 +428,12 @@ void MainWindow::cleanupcode()
 {
   qDebug("running clean up code... main thread: %08x",
     (uint)QApplication::instance()->thread()->currentThreadId());
-  emit stop(); // th->stop();
-  while(!th->isFinished())
-    qDebug("waiting for thread: %08x", (uint)th->currentThreadId());
+  qDebug("waiting for sub thread: %08x",
+    (uint)th->currentThreadId()); // Qt::HANDLE
+  emit stop(); emit quit(); // call exec() in the thread when using signals
+  while(!th->isFinished()){ std::cerr << "."; }
+  qDebug("done.");
+  qDebug("saving layout...");
   saveLayout();
   qDebug("application is cleaned up.");
 }
