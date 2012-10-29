@@ -8,7 +8,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
   cw(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
-  mHANDLE(0), mText(0), mModel(0), mTree(0),
+  mHANDLE(0), mText(0), mDirModel(0), mTree(0), mFileModel(0), mList(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
   mTrayIcon(0), mTrayIconMenu(0)
 {
@@ -51,27 +51,51 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTrayIcon->setIcon(ico);
   mTrayIcon->setToolTip(trUtf8(APP_NAME));
 
-  mModel = new QFileSystemModel;
-  mModel->setReadOnly(true);
-  mModel->setRootPath(home);
-  // mModel->setRootPath(QDir::currentPath());
+  QWidget *wC1 = new QWidget();
+  QHBoxLayout *hbC1L1 = new QHBoxLayout();
+  mDirModel = new QFileSystemModel;
+  mDirModel->setReadOnly(true);
+  mDirModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs); // 遅くなる？
+  mDirModel->setRootPath(home);
+  // mDirModel->setRootPath(QDir::currentPath());
+  // QModelIndex didx = mDirModel->index(QDir::currentPath());
+  QModelIndex didx = mDirModel->index(home);
   // ここで sort すると起動が極端に遅くなる(固まる)のでスキップ
   // (特にネットワークドライブがツリーに含まれていると危険＝起動後でも固まる)
-  // mModel->setSorting(QDir::DirsFirst | QDir::IgnoreCase | QDir::Name);
+  // mDirModel->setSorting(QDir::DirsFirst | QDir::IgnoreCase | QDir::Name);
   mTree = new QTreeView;
-  mTree->setModel(mModel);
+  mTree->setModel(mDirModel);
   mTree->header()->setStretchLastSection(true);
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
-  // mTree->setRootIndex(mModel->index(home));
-  // QModelIndex idx = mModel->index(QDir::currentPath());
-  QModelIndex idx = mModel->index(img.isNull() ? home : fimg);
-  mTree->setCurrentIndex(idx);
-  mTree->expand(idx);
-  mTree->scrollTo(idx);
+  // ※header に Size 情報他が含まれているようなので除くと速くなるかも？
+  // mTree->setRootIndex(didx);
+  mTree->setCurrentIndex(didx);
+  mTree->expand(didx);
+  mTree->scrollTo(didx);
   mTree->resizeColumnToContents(0);
-  setCentralWidget(mTree);
+  hbC1L1->addWidget(mTree);
+  mFileModel = new QFileSystemModel;
+  mFileModel->setReadOnly(true);
+  mFileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
+  mFileModel->setRootPath(home);
+  // mFileModel->setRootPath(QDir::currentPath());
+  QModelIndex fidx = mFileModel->index(fimg);
+  mList = new QListView;
+  mList->setModel(mFileModel);
+  // mList->header()->setStretchLastSection(true);
+  // mList->header()->setSortIndicator(0, Qt::AscendingOrder);
+  // mList->header()->setSortIndicatorShown(true);
+  // mList->header()->setClickable(true);
+  mList->setRootIndex(fidx);
+  mList->setCurrentIndex(fidx);
+  // mList->expand(fidx);
+  mList->scrollTo(fidx);
+  // mList->resizeColumnToContents(0);
+  hbC1L1->addWidget(mList);
+  wC1->setLayout(hbC1L1);
+  setCentralWidget(wC1);
 
   loadLayout();
   mTrayIcon->show();
@@ -79,7 +103,10 @@ MainWindow::MainWindow(QQueue<QString> &q,
 
   connect(mTree, SIGNAL(activated(const QModelIndex &)),
     this, SLOT(treeActivated(const QModelIndex &)));
-  treeActivated(idx);
+  connect(mList, SIGNAL(activated(const QModelIndex &)),
+    this, SLOT(listActivated(const QModelIndex &)));
+  treeActivated(didx);
+  listActivated(fidx);
 
   QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_DATA)));
   db = QSqlDatabase::addDatabase(trUtf8(APP_DB));
@@ -313,8 +340,14 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::treeActivated(const QModelIndex &idx)
 {
-  if(mModel->isDir(idx)) return;
-  QString path(mModel->filePath(idx));
+  if(!mDirModel->isDir(idx)) return;
+  mList->setRootIndex(mFileModel->index(mDirModel->filePath(idx)));
+}
+
+void MainWindow::listActivated(const QModelIndex &idx)
+{
+  if(mFileModel->isDir(idx)) return;
+  QString path(mFileModel->filePath(idx));
   if(QFileInfo(path).suffix().toLower() != "png") return;
   mText->setPlainText(path);
   QImage img(path);
@@ -428,10 +461,11 @@ void MainWindow::fin()
 
 void MainWindow::cleanupcode()
 {
-  qDebug("running clean up code... [main thread: %08x]",
-    (uint)QApplication::instance()->thread()->currentThreadId());
+  qDebug("running clean up code...");
+  //Qt::HANDLE id = QApplication::instance()->thread()->currentThreadId();
+  //qDebug("[main thread: %08x]", (uint)id);
   emit stop(); emit quit(); // call exec() in the thread when using signals
-  qDebug("waiting for sub thread...");
+  qDebug("waiting for sub thread finalize...");
   while(!th->isFinished()){
     std::cerr << ".";
     /* mutable */ QMutex mutex;
@@ -439,8 +473,8 @@ void MainWindow::cleanupcode()
     QWaitCondition cond;
     cond.wait(&mutex, 5);
   }
-  qDebug("done.");
-  qDebug("saving layout...");
+  //qDebug("done.");
+  //qDebug("saving layout...");
   saveLayout();
   qDebug("application is cleaned up.");
 }
