@@ -11,7 +11,7 @@
 #include <QSystemTrayIcon>
 #include <QtSql>
 #include <QFileInfo>
-#include <QDirModel>
+#include <QFileSystemModel>
 #include <QTreeView>
 #include <QLineEdit>
 #include <QTextEdit>
@@ -79,7 +79,7 @@ private:
   QToolBar *mFileToolBar;
   QLineEdit *mHANDLE;
   QTextEdit *mText;
-  QDirModel *mModel;
+  QFileSystemModel *mModel;
   QTreeView *mTree;
 
   QAction *mMinimizeAction;
