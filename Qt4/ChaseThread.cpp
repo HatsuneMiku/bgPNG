@@ -14,12 +14,20 @@ ChaseThread::ChaseThread(QThread *thread) : QObject(), // fource set parent = 0
 {
   qDebug("[ChaseThread created: %08x]", (uint)th->currentThreadId());
   this->moveToThread(th);
+  connect(th, SIGNAL(started()), this, SLOT(started()));
 }
 
 void ChaseThread::stop()
 {
   timer.stop();
   qDebug("[ChaseThread timer stop: %08x]", (uint)th->currentThreadId());
+}
+
+void ChaseThread::started()
+{
+  qDebug("[ChaseThread timer start: %08x]", (uint)th->currentThreadId());
+  connect(&timer, SIGNAL(timeout()), this, SLOT(chase()));
+  timer.start(50); // QTimer can only be used with threads started with QThread
 }
 
 void ChaseThread::chase()
@@ -34,13 +42,6 @@ void ChaseThread::chase()
     QMutexLocker locker(&mutex);
     emit proc();
   }
-}
-
-void ChaseThread::started()
-{
-  qDebug("[ChaseThread timer start: %08x]", (uint)th->currentThreadId());
-  connect(&timer, SIGNAL(timeout()), this, SLOT(chase()));
-  timer.start(50); // QTimer can only be used with threads started with QThread
 }
 
 void ChaseThread::active()

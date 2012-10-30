@@ -126,18 +126,15 @@ MainWindow::MainWindow(QQueue<QString> &q,
     }
   }
 
-  th = new QThread();
-  ct = new ChaseThread(th);
+  ct = new ChaseThread(th = new QThread(this));
   connect(this, SIGNAL(quit()), th, SLOT(quit()));
   connect(this, SIGNAL(stop()), ct, SLOT(stop()));
   connect(ct, SIGNAL(proc()), this, SLOT(proc()));
-  connect(th, SIGNAL(started()), ct, SLOT(started()));
   th->start();
 }
 
 MainWindow::~MainWindow()
 {
-  if(th){ delete th; th = 0; } // auto delete ct
 }
 
 void MainWindow::saveLayout()

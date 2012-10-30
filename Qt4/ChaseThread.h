@@ -25,8 +25,8 @@ public slots:
   void stop();
 
 private slots:
-  void chase();
   void started();
+  void chase();
   void active();
 
 private:
