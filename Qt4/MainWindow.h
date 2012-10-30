@@ -54,8 +54,8 @@ private:
 
 signals:
   void toBeAbort();
-  void stop();
   void quit();
+  void stop();
 
 public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
