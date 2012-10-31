@@ -6,6 +6,7 @@
 #define __BGPNG_H__
 
 #include <QtCore>
+#include <QApplication>
 #include <vector>
 #include <iomanip>
 #include <iostream>
@@ -16,6 +17,7 @@ class bgPNG : public QObject {
 
 public:
   bgPNG(int n, QObject *parent=0);
+  virtual ~bgPNG();
   int getnum() { return num; }
   int getstat() { return stat; }
   QByteArray &getdat() { return dat; }

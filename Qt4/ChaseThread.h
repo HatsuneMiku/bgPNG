@@ -17,6 +17,7 @@ class ChaseThread : public QObject {
 
 public:
   ChaseThread(QThread *thread);
+  virtual ~ChaseThread();
 
 signals:
   void proc();

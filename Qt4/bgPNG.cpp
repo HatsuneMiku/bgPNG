@@ -8,6 +8,14 @@ using namespace std;
 
 bgPNG::bgPNG(int n, QObject *parent) : QObject(parent), num(n), stat(0)
 {
+  qDebug("[bgPNG created: %08x]",
+    (uint)QApplication::instance()->thread()->currentThreadId());
+}
+
+bgPNG::~bgPNG()
+{
+  qDebug("[bgPNG deleted: %08x]",
+    (uint)QApplication::instance()->thread()->currentThreadId());
 }
 
 void bgPNG::get(const QString &s)

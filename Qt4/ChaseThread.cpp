@@ -17,6 +17,11 @@ ChaseThread::ChaseThread(QThread *thread) : QObject(), // fource set parent = 0
   connect(th, SIGNAL(started()), this, SLOT(started()));
 }
 
+ChaseThread::~ChaseThread()
+{
+  qDebug("[ChaseThread deleted: %08x]", (uint)th->currentThreadId());
+}
+
 void ChaseThread::stop()
 {
   timer.stop();
