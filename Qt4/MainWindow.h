@@ -64,8 +64,8 @@ public slots:
   QImage customRGBA(const QImage &img);
   void hover(ulong hwnd);
   void chase(ulong hwnd=0);
-  void proc();
   void fin();
+  void proc();
   void cleanupcode();
 
 private:

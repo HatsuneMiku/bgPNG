@@ -37,11 +37,13 @@ void ChaseThread::started()
 
 void ChaseThread::chase()
 {
+#if 0
   static int i = 0;
   if(++i > 200){
     qDebug("[ChaseThread chase: %08x]", (uint)th->currentThreadId());
     i = 0;
   }
+#endif
   // 今のところ二重に呼ばれる訳ではない
   {
     QMutexLocker locker(&mutex);

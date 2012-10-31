@@ -411,28 +411,6 @@ void MainWindow::chase(ulong hwnd)
   // delete jp;
 }
 
-void MainWindow::proc()
-{
-  // 再入禁止?
-  if(quelst.isEmpty()) return;
-  if(!db.open()){
-    QString msg(trUtf8("データベースを開けません"));
-    QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
-  }else{
-    db.transaction();
-    QSqlQuery q;
-    while(!quelst.isEmpty()){
-      QString link(quelst.dequeue());
-      QString v(trUtf8("'%1', '%2', %3").arg(link).arg(link).arg(0));
-      // sqlite は複数の values を連結出来ないらしい
-      q.exec(trUtf8("insert into testtable (c1, c2, c3) values (%1);").arg(v));
-    }
-    q.clear();
-    if(!db.commit()) db.rollback();
-    db.close();
-  }
-}
-
 void MainWindow::fin()
 {
   bgPNG *bp = qobject_cast<bgPNG *>(sender());
@@ -465,6 +443,35 @@ void MainWindow::fin()
   delete bp;
 }
 
+void MainWindow::proc()
+{
+#if 0
+  static int i = 0;
+  if(++i > 200){
+    qDebug("[MainWindow proc: %08x]", (uint)th->currentThreadId());
+    i = 0;
+  }
+#endif
+  // 再入禁止?
+  if(quelst.isEmpty()) return;
+  if(!db.open()){
+    QString msg(trUtf8("データベースを開けません"));
+    QMessageBox::critical(this, trUtf8(APP_NAME), msg, QMessageBox::Cancel);
+  }else{
+    db.transaction();
+    QSqlQuery q;
+    while(!quelst.isEmpty()){
+      QString link(quelst.dequeue());
+      QString v(trUtf8("'%1', '%2', %3").arg(link).arg(link).arg(0));
+      // sqlite は複数の values を連結出来ないらしい
+      q.exec(trUtf8("insert into testtable (c1, c2, c3) values (%1);").arg(v));
+    }
+    q.clear();
+    if(!db.commit()) db.rollback();
+    db.close();
+  }
+}
+
 void MainWindow::cleanupcode()
 {
   qDebug("running clean up code...");
@@ -472,13 +479,17 @@ void MainWindow::cleanupcode()
   qDebug("[main thread: %08x]", (uint)id);
   emit stop(); emit quit();
   qDebug("waiting for sub thread finalize...");
-  while(!th->isFinished()){
-    std::cerr << ".";
-    /* mutable */ QMutex mutex;
-    QMutexLocker locker(&mutex);
-    QWaitCondition cond;
-    cond.wait(&mutex, 5);
+  if(th){
+    while(!th->isFinished()){
+      std::cerr << ".";
+      /* mutable */ QMutex mutex;
+      QMutexLocker locker(&mutex);
+      QWaitCondition cond;
+      cond.wait(&mutex, 5);
+    }
+    delete th; th = 0; // must be deleted before delete ct
   }
+  if(ct){ delete ct; ct = 0; } // must be deleted after delete th
   qDebug("done.");
   qDebug("saving layout...");
   saveLayout();
