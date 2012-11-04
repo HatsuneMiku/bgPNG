@@ -74,6 +74,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTree->setCurrentIndex(didx);
   mTree->expand(didx);
   mTree->scrollTo(didx);
+  mTree->setColumnHidden(1, true); // Size
+  mTree->setColumnHidden(2, true); // Type
   mTree->resizeColumnToContents(0);
   hbC1L1->addWidget(mTree);
   mFileModel = new QFileSystemModel;
@@ -129,7 +131,6 @@ MainWindow::MainWindow(QQueue<QString> &q,
   ct = new ChaseThread(th = new QThread(this));
   connect(this, SIGNAL(quit()), th, SLOT(quit()));
   connect(this, SIGNAL(stop()), ct, SLOT(stop()));
-  connect(ct, SIGNAL(proc()), this, SLOT(proc()));
   th->start();
 }
 
@@ -399,13 +400,15 @@ void MainWindow::chase(ulong hwnd)
   //   /* Q_RETURN_ARG(void, ), */ Q_ARG(ulong, hwnd));
 
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
-  bgPNG *bp123 = new bgPNG(123);
+  bgPNG *bp123 = new bgPNG(th, 123);
   connect(bp123, SIGNAL(done()), this, SLOT(fin()));
+  connect(ct, SIGNAL(proc()), bp123, SLOT(proc()));
   bp123->get(mHANDLE->text());
 
   qDebug("HANDLE: %s", mHANDLE->text().toUtf8().constData());
-  bgPNG *bp456 = new bgPNG(456);
+  bgPNG *bp456 = new bgPNG(th, 456);
   connect(bp456, SIGNAL(done()), this, SLOT(fin()));
+  connect(ct, SIGNAL(proc()), bp456, SLOT(proc()));
   QTextCodec *jp = QTextCodec::codecForName("utf-8");
   bp456->getb(jp->fromUnicode(mHANDLE->text()));
   // delete jp;
@@ -413,6 +416,13 @@ void MainWindow::chase(ulong hwnd)
 
 void MainWindow::fin()
 {
+#if 1
+  static int i = 0;
+  if(++i > 200){
+    qDebug("[MainWindow fin: %08x]", (uint)th->currentThreadId());
+    i = 0;
+  }
+#endif
   bgPNG *bp = qobject_cast<bgPNG *>(sender());
   qDebug("num: %d", bp->getnum());
 
@@ -440,12 +450,16 @@ void MainWindow::fin()
       }
     }
   }
+  // disconnect as soon as possible before sent second SIGNAL(proc()) by timer
+  // and use blocking at SLOT(proc()) of bgPNG when disconnection was too late
+  disconnect(bp, SIGNAL(done()), this, SLOT(fin()));
+  disconnect(ct, SIGNAL(proc()), bp, SLOT(proc()));
   delete bp;
 }
 
 void MainWindow::proc()
 {
-#if 0
+#if 1
   static int i = 0;
   if(++i > 200){
     qDebug("[MainWindow proc: %08x]", (uint)th->currentThreadId());

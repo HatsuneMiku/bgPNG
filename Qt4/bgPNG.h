@@ -6,7 +6,7 @@
 #define __BGPNG_H__
 
 #include <QtCore>
-#include <QApplication>
+#include <QThread>
 #include <vector>
 #include <iomanip>
 #include <iostream>
@@ -16,7 +16,7 @@ class bgPNG : public QObject {
   Q_DISABLE_COPY(bgPNG)
 
 public:
-  bgPNG(int n, QObject *parent=0);
+  bgPNG(QThread *thread, int n);
   virtual ~bgPNG();
   int getnum() { return num; }
   int getstat() { return stat; }
@@ -28,13 +28,13 @@ signals:
   void done();
 
 private slots:
-  void fin(void);
-  void err(void) {}
+  void proc(void);
 
 private:
+  QThread *th;
   QString bgImgPath;
   int num;
-  int stat;
+  volatile int stat;
   QByteArray dat;
 };
 
