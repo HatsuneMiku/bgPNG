@@ -3,19 +3,19 @@
 
   rc W_GDIplus.rc
   cl W_GDIplus.cpp W_GDIplus.res kernel32.lib user32.lib ole32.lib gdi32.lib \
-    gdiplus.lib -DUNICODE
+    gdiplus.lib dwmapi.lib -DUNICODE
 */
 
 #include <windows.h>
 #include <gdiplus.h>
+#include <dwmapi.h>
 
 #define CLASS_NAME L"W_GDIPLUS"
 #define APP_NAME L"W_GDIPLUS"
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
 
-Gdiplus::Image *LoadImageFromResource(HINSTANCE hinst,
-  LPCTSTR name, LPCTSTR typ)
+Gdiplus::Image *LoadFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
 {
   HRSRC hres = FindResource(hinst, name, typ);
   if(!hres) return NULL;
@@ -51,20 +51,40 @@ Gdiplus::Image *LoadImageFromResource(HINSTANCE hinst,
   return NULL;
 }
 
+BOOL SetThrough(HWND hwnd, int through, int l, int r, int t, int b)
+{
+  BOOL en;
+  if(DwmIsCompositionEnabled(&en) == S_OK)
+    if(en){
+      MARGINS margins = {l, r, t, b};
+      if(!through) margins = MARGINS();
+      return DwmExtendFrameIntoClientArea(hwnd, &margins) == S_OK;
+    }
+  return FALSE;
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+  static int through = 0;
   static Gdiplus::Image *img = NULL;
   // HINSTANCE hinst = ((LPCREATESTRUCT)lparam)->hInstance; // WM_CREATE only
   // HINSTANCE hinst = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
   HINSTANCE hinst = GetModuleHandle(NULL);
   switch(msg){
   case WM_CREATE:
-    img = LoadImageFromResource(hinst, L"png01", L"IMAGE");
+    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    img = LoadFromResource(hinst, L"png01", L"IMAGE");
     if(!img) MessageBox(hwnd, L"cannot load IMAGE", APP_NAME,
       MB_OK | MB_ICONEXCLAMATION);
     return FALSE;
+  case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
+    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    return FALSE;
   case WM_LBUTTONDOWN:
-    MessageBox(hwnd, L"WM_LBUTTON", APP_NAME, MB_OK | MB_ICONINFORMATION);
+    SetThrough(hwnd, through = 1 - through, 40, 40, 80, 80);
+    return FALSE;
+  case WM_RBUTTONDOWN:
+    SetThrough(hwnd, 1, -1, -1, -1, -1);
     return FALSE;
   case WM_PAINT:{
     PAINTSTRUCT ps;
@@ -116,7 +136,8 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
   int x = (GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
-    WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    // WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    WS_POPUP | WS_VISIBLE,
     x, y, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hinst, NULL);
   if(hwnd){
     ShowWindow(hwnd, ncmd);
