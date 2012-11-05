@@ -11,10 +11,10 @@
 
 #define CLASS_NAME L"W_GDIPLUS"
 #define APP_NAME L"W_GDIPLUS"
-#define WINDOW_WIDTH 512
-#define WINDOW_HEIGHT 768
+#define WINDOW_WIDTH 480
+#define WINDOW_HEIGHT 640
 
-Gdiplus::Bitmap *LoadImageFromResource(HINSTANCE hinst,
+Gdiplus::Image *LoadImageFromResource(HINSTANCE hinst,
   LPCTSTR name, LPCTSTR typ)
 {
   HRSRC hres = FindResource(hinst, name, typ);
@@ -32,17 +32,15 @@ Gdiplus::Bitmap *LoadImageFromResource(HINSTANCE hinst,
       CopyMemory(pbuf, pdata, siz);
       IStream *s = NULL;
       if(CreateStreamOnHGlobal(hbuf, FALSE, &s) == S_OK){
-MessageBox(NULL, L"stream", APP_NAME, MB_OK);
-        Gdiplus::Bitmap *bitmap = Gdiplus::Bitmap::FromStream(s);
+        Gdiplus::Image *img = Gdiplus::Image::FromStream(s);
         s->Release();
-if(!bitmap) MessageBox(NULL, L"bitmap==NULL", APP_NAME, MB_OK);
-        if(bitmap){
-          if(bitmap->GetLastStatus() == Gdiplus::Ok){
-            GlobalUnlock(hbuf);
-            GlobalFree(hbuf);
-            return bitmap;
+        if(img){
+          if(img->GetLastStatus() == Gdiplus::Ok){
+            GlobalUnlock(hbuf); // Is it ok to unlock handle here ?
+            GlobalFree(hbuf); // Is it ok to free handle here ?
+            return img;
           }
-          delete bitmap;
+          delete img;
         }
       }
       GlobalUnlock(hbuf);
@@ -55,20 +53,33 @@ if(!bitmap) MessageBox(NULL, L"bitmap==NULL", APP_NAME, MB_OK);
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-  static Gdiplus::Bitmap *bitmap = NULL;
+  static Gdiplus::Image *img = NULL;
   // HINSTANCE hinst = ((LPCREATESTRUCT)lparam)->hInstance; // WM_CREATE only
-  HINSTANCE hinst = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
+  // HINSTANCE hinst = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
+  HINSTANCE hinst = GetModuleHandle(NULL);
   switch(msg){
   case WM_CREATE:
-    bitmap = LoadImageFromResource(hinst, L"png01", L"IMAGE");
-    if(!bitmap) MessageBox(hwnd, L"cannot load resource", APP_NAME,
+    img = LoadImageFromResource(hinst, L"png01", L"IMAGE");
+    if(!img) MessageBox(hwnd, L"cannot load IMAGE", APP_NAME,
       MB_OK | MB_ICONEXCLAMATION);
     return FALSE;
   case WM_LBUTTONDOWN:
     MessageBox(hwnd, L"WM_LBUTTON", APP_NAME, MB_OK | MB_ICONINFORMATION);
     return FALSE;
+  case WM_PAINT:{
+    PAINTSTRUCT ps;
+    BeginPaint(hwnd, &ps);
+    RECT r;
+    GetClientRect(hwnd, &r);
+    Gdiplus::Graphics g(ps.hdc);
+    g.Clear(Gdiplus::Color(128, 224, 224, 224)); // ARGB
+    int x = (r.right - r.left - img->GetWidth()) / 2;
+    int y = (r.bottom - r.top - img->GetHeight()) / 2;
+    g.DrawImage(img, x, y, img->GetWidth(), img->GetHeight());
+    EndPaint(hwnd, &ps);
+    } return FALSE;
   case WM_DESTROY:
-    if(bitmap){ delete bitmap; bitmap = NULL; }
+    if(img){ delete img; img = NULL; }
     PostQuitMessage(0);
     return FALSE;
   }
@@ -96,22 +107,24 @@ BOOL RegCls(HINSTANCE hinst)
 
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
 {
+  MSG msg;
   if(!RegCls(hinst)) return 1;
+  // GDI+ must be initialized before create window (use GDI+ at WM_CREATE)
+  ULONG_PTR token;
+  Gdiplus::GdiplusStartupInput gsi;
+  if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok) return 1;
   int x = (GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
     WS_OVERLAPPEDWINDOW | WS_VISIBLE,
     x, y, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hinst, NULL);
-  if(!hwnd) return 1;
-  ShowWindow(hwnd, ncmd);
-  UpdateWindow(hwnd);
-  ULONG_PTR token;
-  Gdiplus::GdiplusStartupInput gsi;
-  if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok) return 1;
-  MSG msg;
-  while(GetMessage(&msg, NULL, 0, 0) > 0){
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+  if(hwnd){
+    ShowWindow(hwnd, ncmd);
+    UpdateWindow(hwnd);
+    while(GetMessage(&msg, NULL, 0, 0) > 0){
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
   }
   Gdiplus::GdiplusShutdown(token);
   return msg.wParam;
