@@ -6,16 +6,32 @@
 
 using namespace std;
 
-bgPNG::bgPNG(QThread *thread, int n) : QObject(), // fource set parent = 0
+bgPNG::bgPNG(QThread *thread, int n) :
+  QWidget(0, Qt::FramelessWindowHint), // fource set parent = 0
   th(thread), num(n), stat(0)
 {
   qDebug("[bgPNG created: %d, %08x]", num, (uint)th->currentThreadId());
   this->moveToThread(th);
+  setAttribute(Qt::WA_TranslucentBackground);
+  move(40, 20);
+  resize(400, 200);
+  show();
 }
 
 bgPNG::~bgPNG()
 {
   qDebug("[bgPNG deleted: %d, %08x]", num, (uint)th->currentThreadId());
+}
+
+void bgPNG::paintEvent(QPaintEvent *ev)
+{
+  QPainter p(this);
+  p.setBackgroundMode(Qt::TransparentMode);
+  p.setBackground(QBrush(Qt::darkGreen, Qt::DiagCrossPattern));
+  p.eraseRect(rect());
+  p.setBrush(QBrush(Qt::cyan, Qt::CrossPattern));
+  p.setPen(QPen(Qt::white, 5));
+  p.drawRect(rect());
 }
 
 void bgPNG::get(const QString &s)
@@ -39,7 +55,12 @@ void bgPNG::getb(const QByteArray &b)
 
 void bgPNG::proc(void)
 {
-  qDebug("[bgPNG proc: %d, %08x]", num, (uint)th->currentThreadId());
+  volatile static int c = 0;
+  qDebug("[bgPNG proc: %d, %08x, %02d]", num, (uint)th->currentThreadId(), c);
+  if(++c < 50) return;
+  if(c > 50) c = 0; // check after increment twice because singleton
+  setUpdatesEnabled(true);
+  update(); // repaint();
   if(stat){
     stat = 0;
     emit done(); // must be called once because this object will be deleted

@@ -6,12 +6,13 @@
 #define __BGPNG_H__
 
 #include <QtCore>
+#include <QtGui>
 #include <QThread>
 #include <vector>
 #include <iomanip>
 #include <iostream>
 
-class bgPNG : public QObject {
+class bgPNG : public QWidget {
   Q_OBJECT
   Q_DISABLE_COPY(bgPNG)
 
@@ -23,6 +24,9 @@ public:
   QByteArray &getdat() { return dat; }
   void get(const QString &s);
   void getb(const QByteArray &b);
+
+protected:
+  void paintEvent(QPaintEvent *ev);
 
 signals:
   void done();

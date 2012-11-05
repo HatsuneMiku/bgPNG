@@ -69,6 +69,12 @@ MainWindow::MainWindow(QQueue<QString> &q,
   //  SLOT(QTreeView::sortByColumn()) / SLOT(QTableView::sortByColumn())
   //  モデルがソートしない場合またはListViewでソートする場合は
   //  Viewでのデータ表示前にProxyModelを使ってモデル構造を変換
+  // to ignore network drives
+  //  QSortFilterProxyModel subclass with redefined
+  //  filterAcceptsRow() or filterAcceptsColumn() or both
+  //  using data() with QFileSystemModel::FilePathRole
+  //  or using qobject_cast<> and calling QFileSystemModel::filePath()
+  //  GetDriveType() WinAPI under #ifdef Q_OS_WIN32
   mTree = new QTreeView;
   mTree->setModel(mDirModel);
   mTree->header()->setStretchLastSection(true);

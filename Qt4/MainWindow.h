@@ -12,6 +12,7 @@
 #include <QtSql>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QSortFilterProxyModel>
 #include <QTreeView>
 #include <QListView>
 #include <QLineEdit>
