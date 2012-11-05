@@ -56,9 +56,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QHBoxLayout *hbC1L1 = new QHBoxLayout();
   mDriveModel = new QStringListModel;
   // mDriveModel->setReadOnly(true);
-  // GetDriveType() WinAPI under #ifdef Q_OS_WIN32
-  QStringList drives;
-  drives << "C:\\" << "D:\\" << "E:\\";
+  QStringList drives = Qwert::getLocalDrives();
   mDriveModel->setStringList(drives);
   QModelIndex driveidx = mDriveModel->index(0);
   mList = new QListView;

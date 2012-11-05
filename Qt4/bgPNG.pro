@@ -8,8 +8,8 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += MainWindow.h bgPNG.h ChaseThread.h ChaserWidget.h
-SOURCES += main.cpp MainWindow.cpp bgPNG.cpp ChaseThread.cpp ChaserWidget.cpp
+HEADERS += MainWindow.h Qwert.h bgPNG.h ChaseThread.h ChaserWidget.h
+SOURCES += main.cpp MainWindow.cpp Qwert.cpp bgPNG.cpp ChaseThread.cpp ChaserWidget.cpp
 RESOURCES += bgPNG.qrc
 
 #QT = core network

@@ -19,6 +19,7 @@
 #include <QLineEdit>
 #include <QTextEdit>
 
+#include "Qwert.h"
 #include "bgPNG.h"
 #include "ChaseThread.h"
 #include "ChaserWidget.h"
