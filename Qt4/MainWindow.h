@@ -10,11 +10,11 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QtSql>
-#include <QFileInfo>
-#include <QFileSystemModel>
 #include <QStringListModel>
-#include <QSortFilterProxyModel>
 #include <QListView>
+#include <QSortFilterProxyModel>
+#include <QFileSystemModel>
+#include <QFileInfo>
 #include <QTreeView>
 #include <QLineEdit>
 #include <QTextEdit>
@@ -84,9 +84,9 @@ private:
   QToolBar *mFileToolBar;
   QLineEdit *mHANDLE;
   QTextEdit *mText;
-  QSortFilterProxyModel *mProxyModel;
   QStringListModel *mDriveModel;
   QListView *mList;
+  QSortFilterProxyModel *mProxyModel;
   QFileSystemModel *mDirModel;
   QTreeView *mTree;
 

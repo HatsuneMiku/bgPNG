@@ -9,7 +9,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   cw(0), ct(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
   mHANDLE(0), mText(0),
-  mProxyModel(0), mDriveModel(0), mList(0), mDirModel(0), mTree(0),
+  mDriveModel(0), mList(0), mProxyModel(0), mDirModel(0), mTree(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
   mTrayIcon(0), mTrayIconMenu(0)
 {
@@ -60,37 +60,42 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QStringList drives;
   drives << "C:\\" << "D:\\" << "E:\\";
   mDriveModel->setStringList(drives);
-  mProxyModel = new QSortFilterProxyModel;
-  // mProxyModel->setDynamicSortFilter(true);
-  mProxyModel->setSourceModel(mDriveModel);
-  mProxyModel->setFilterKeyColumn(0);
-  QRegExp re("^(C|D|E)", Qt::CaseInsensitive, QRegExp::RegExp);
-  mProxyModel->setFilterRegExp(re);
-  QModelIndex pidx = mProxyModel->mapFromSource(mDriveModel->index(0));
+  QModelIndex driveidx = mDriveModel->index(0);
   mList = new QListView;
-  mList->setModel(mProxyModel);
-  mList->setCurrentIndex(pidx);
-  mList->scrollTo(pidx);
+  mList->setModel(mDriveModel);
+  mList->setCurrentIndex(driveidx);
+  mList->scrollTo(driveidx);
   hbC1L1->addWidget(mList, 1);
   mDirModel = new QFileSystemModel;
   mDirModel->setReadOnly(true);
-  mDirModel->setFilter(QDir::AllEntries|QDir::NoDotAndDotDot|QDir::AllDirs);
+  mDirModel->setFilter(QDir::NoDotAndDotDot|QDir::Dirs|QDir::Files); // nodrive
   mDirModel->setRootPath(drives[0]);
+  mProxyModel = new QSortFilterProxyModel;
+  mProxyModel->setSourceModel(mDirModel);
+  // mProxyModel->setDynamicSortFilter(true);
+  mProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+  mProxyModel->setFilterKeyColumn(0);
+  // QRegExp re(".+\\.png", Qt::CaseInsensitive, QRegExp::RegExp);
+  QRegExp re(".+", Qt::CaseInsensitive, QRegExp::RegExp);
+  mProxyModel->setFilterRegExp(re);
   QModelIndex didx = mDirModel->index(fimg);
+  QModelIndex pidx = mProxyModel->mapFromSource(didx);
   mTree = new QTreeView;
-  mTree->setModel(mDirModel);
+  mTree->setModel(mProxyModel);
   mTree->header()->setStretchLastSection(true);
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
-  mTree->setCurrentIndex(didx);
-  mTree->expand(didx);
-  mTree->scrollTo(didx);
+  mTree->setCurrentIndex(pidx);
+  mTree->expand(pidx);
+  mTree->scrollTo(pidx);
   mTree->setColumnWidth(0, 200); // Name
   mTree->setColumnWidth(1, 100); // Size
   mTree->hideColumn(2); // Type
   mTree->setColumnWidth(3, 100); // Date
-  mTree->sortByColumn(0);
+  mTree->setSortingEnabled(true);
+  // mTree->sortByColumn(0);
+  mProxyModel->sort(0); // call setSortCaseSensitivity() before
   hbC1L1->addWidget(mTree, 5);
   wC1->setLayout(hbC1L1);
   setCentralWidget(wC1);
@@ -103,8 +108,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
     this, SLOT(listActivated(const QModelIndex &)));
   connect(mTree, SIGNAL(activated(const QModelIndex &)),
     this, SLOT(treeActivated(const QModelIndex &)));
-  listActivated(pidx);
-  treeActivated(didx);
+  listActivated(driveidx);
+  treeActivated(pidx);
 
   QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_DATA)));
   db = QSqlDatabase::addDatabase(trUtf8(APP_DB));
@@ -341,16 +346,18 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::listActivated(const QModelIndex &idx)
 {
-  QModelIndex driveidx = mProxyModel->mapToSource(idx);
-  QString drive = mDriveModel->data(driveidx, Qt::EditRole).toString();
+  QString drive = mDriveModel->data(idx, Qt::EditRole).toString();
   qDebug("list: %s", qPrintable(drive));
-  mTree->setRootIndex(mDirModel->setRootPath(drive));
+  // QModelIndex didx = mDirModel->index(drive);
+  QModelIndex didx = mDirModel->setRootPath(drive);
+  mTree->setRootIndex(mProxyModel->mapFromSource(didx));
 }
 
 void MainWindow::treeActivated(const QModelIndex &idx)
 {
-  if(mDirModel->isDir(idx)) return;
-  QString path(mDirModel->fileInfo(idx).absoluteFilePath());
+  QModelIndex didx = mProxyModel->mapToSource(idx);
+  if(mDirModel->isDir(didx)) return;
+  QString path(mDirModel->fileInfo(didx).absoluteFilePath());
   if(QFileInfo(path).suffix().toLower() != "png") return;
   mText->setPlainText(path);
   QImage img(path);
