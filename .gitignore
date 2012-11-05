@@ -1,4 +1,5 @@
 
+*.res
 *.obj
 *.exe
 Qt4/debug
