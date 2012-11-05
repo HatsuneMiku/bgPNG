@@ -12,9 +12,10 @@
 #include <QtSql>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QStringListModel>
 #include <QSortFilterProxyModel>
-#include <QTreeView>
 #include <QListView>
+#include <QTreeView>
 #include <QLineEdit>
 #include <QTextEdit>
 
@@ -60,8 +61,8 @@ signals:
 
 public slots:
   void iconActivated(QSystemTrayIcon::ActivationReason reason);
-  void treeActivated(const QModelIndex &idx);
   void listActivated(const QModelIndex &idx);
+  void treeActivated(const QModelIndex &idx);
   QImage customRGBA(const QImage &img);
   void hover(ulong hwnd);
   void chase(ulong hwnd=0);
@@ -84,10 +85,10 @@ private:
   QLineEdit *mHANDLE;
   QTextEdit *mText;
   QSortFilterProxyModel *mProxyModel;
+  QStringListModel *mDriveModel;
+  QListView *mList;
   QFileSystemModel *mDirModel;
   QTreeView *mTree;
-  QFileSystemModel *mFileModel;
-  QListView *mList;
 
   QAction *mMinimizeAction;
   QAction *mMaximizeAction;
