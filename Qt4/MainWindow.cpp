@@ -63,6 +63,12 @@ MainWindow::MainWindow(QQueue<QString> &q,
   // ここで sort すると起動が極端に遅くなる(固まる)のでスキップ
   // (特にネットワークドライブがツリーに含まれていると危険＝起動後でも固まる)
   // mDirModel->setSorting(QDir::DirsFirst | QDir::IgnoreCase | QDir::Name);
+  //  モデルがソート可能 QAbstractItemModel::sort()
+  //  ヘッダ部分クリックで動的にソート
+  //  SIGNAL(QHeaderView::sortIndicatorChange())
+  //  SLOT(QTreeView::sortByColumn()) / SLOT(QTableView::sortByColumn())
+  //  モデルがソートしない場合またはListViewでソートする場合は
+  //  Viewでのデータ表示前にProxyModelを使ってモデル構造を変換
   mTree = new QTreeView;
   mTree->setModel(mDirModel);
   mTree->header()->setStretchLastSection(true);
