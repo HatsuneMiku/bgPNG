@@ -57,8 +57,8 @@ void bgPNG::proc(void)
 {
   volatile static int c = 0;
   qDebug("[bgPNG proc: %d, %08x, %02d]", num, (uint)th->currentThreadId(), c);
-  if(++c < 50) return;
-  if(c > 50) c = 0; // check after increment twice because singleton
+  if(++c < 100) return;
+  if(c > 100) c = 0; // check after increment twice because singleton
   setUpdatesEnabled(true);
   update(); // repaint();
   if(stat){

@@ -8,7 +8,8 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags),
   cw(0), ct(0), th(0), quelst(q),
   mChaseAction(0), mFileMenu(0), mViewMenu(0), mFileToolBar(0),
-  mHANDLE(0), mText(0), mDirModel(0), mTree(0), mFileModel(0), mList(0),
+  mHANDLE(0), mText(0),
+  mProxyModel(0), mDirModel(0), mTree(0), mFileModel(0), mList(0),
   mMinimizeAction(0), mMaximizeAction(0), mRestoreAction(0), mQuitAction(0),
   mTrayIcon(0), mTrayIconMenu(0)
 {
@@ -56,7 +57,13 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mDirModel = new QFileSystemModel;
   mDirModel->setReadOnly(true);
   mDirModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs); // 遅くなる？
-  mDirModel->setRootPath(home);
+  // 遅くなる原因は setRootPath() (ただしこれを取ると移動出来なくなる)
+  //  setRootPath() の代わりに setRootIndex() 使っても上へ行けない
+  //  QSortFilterProxyModel を使っても setRootPath() すると遅い
+  //  QSortFilterProxyModel を経由した後に setRootPath() した場合も遅い
+  //  結局 mDirModel と mListView (file list) で連携するよりも
+  //  mListView (drive list) と mDirModel (全 column 表示) の構成の方が良さそう
+  // mDirModel->setRootPath(home);
   // mDirModel->setRootPath(QDir::currentPath());
   // QModelIndex didx = mDirModel->index(QDir::currentPath());
   QModelIndex didx = mDirModel->index(home);
@@ -69,6 +76,15 @@ MainWindow::MainWindow(QQueue<QString> &q,
   //  SLOT(QTreeView::sortByColumn()) / SLOT(QTableView::sortByColumn())
   //  モデルがソートしない場合またはListViewでソートする場合は
   //  Viewでのデータ表示前にProxyModelを使ってモデル構造を変換
+  mProxyModel = new QSortFilterProxyModel;
+  // mProxyModel->setDynamicSortFilter(true);
+  mProxyModel->setSourceModel(mDirModel);
+  mProxyModel->setFilterKeyColumn(0);
+  // 単純に setFilterKeyColumn(0) すると tree の子にも Filter が効いてしまう
+  // QSortFilterProxyModel を継承して filterAcceptsColumn の override が必要
+  // QRegExp re("^(C|D|E)", Qt::CaseInsensitive, QRegExp::RegExp);
+  QRegExp re(".*", Qt::CaseInsensitive, QRegExp::RegExp);
+  mProxyModel->setFilterRegExp(re);
   // to ignore network drives
   //  QSortFilterProxyModel subclass with redefined
   //  filterAcceptsRow() or filterAcceptsColumn() or both
@@ -76,16 +92,18 @@ MainWindow::MainWindow(QQueue<QString> &q,
   //  or using qobject_cast<> and calling QFileSystemModel::filePath()
   //  GetDriveType() WinAPI under #ifdef Q_OS_WIN32
   mTree = new QTreeView;
-  mTree->setModel(mDirModel);
+  mTree->setModel(mProxyModel); // mDirModel
   mTree->header()->setStretchLastSection(true);
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
   // ※header に Size 情報他が含まれているようなので除くと速くなるかも？
-  // mTree->setRootIndex(didx);
-  mTree->setCurrentIndex(didx);
-  mTree->expand(didx);
-  mTree->scrollTo(didx);
+  QModelIndex pidx = mProxyModel->mapFromSource(didx);
+  // mTree->setRootIndex(pidx); // mDirModel->setRootPath(home) ※上へ行けない
+  mTree->setRootIndex(mProxyModel->mapFromSource(mDirModel->index("C:\\")));
+  mTree->setCurrentIndex(pidx);
+  mTree->expand(pidx);
+  mTree->scrollTo(pidx);
   mTree->setColumnHidden(1, true); // Size
   mTree->setColumnHidden(2, true); // Type
   mTree->resizeColumnToContents(0);
@@ -119,7 +137,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
     this, SLOT(treeActivated(const QModelIndex &)));
   connect(mList, SIGNAL(activated(const QModelIndex &)),
     this, SLOT(listActivated(const QModelIndex &)));
-  treeActivated(didx);
+  treeActivated(pidx);
   listActivated(fidx);
 
   QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_DATA)));
@@ -357,8 +375,9 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::treeActivated(const QModelIndex &idx)
 {
-  if(!mDirModel->isDir(idx)) return;
-  QString path(mDirModel->fileInfo(idx).absoluteFilePath());
+  QModelIndex didx = mProxyModel->mapToSource(idx);
+  if(!mDirModel->isDir(didx)) return;
+  QString path(mDirModel->fileInfo(didx).absoluteFilePath());
   // qDebug("tree: %s", qPrintable(path));
   mList->setRootIndex(mFileModel->setRootPath(path));
 }

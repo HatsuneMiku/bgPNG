@@ -83,6 +83,7 @@ private:
   QToolBar *mFileToolBar;
   QLineEdit *mHANDLE;
   QTextEdit *mText;
+  QSortFilterProxyModel *mProxyModel;
   QFileSystemModel *mDirModel;
   QTreeView *mTree;
   QFileSystemModel *mFileModel;
