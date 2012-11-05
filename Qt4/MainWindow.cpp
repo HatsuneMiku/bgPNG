@@ -69,19 +69,13 @@ MainWindow::MainWindow(QQueue<QString> &q,
   QModelIndex pidx = mProxyModel->mapFromSource(mDriveModel->index(0));
   mList = new QListView;
   mList->setModel(mProxyModel);
-  // mList->setRootIndex(pidx);
   mList->setCurrentIndex(pidx);
-  // mList->expand(pidx);
   mList->scrollTo(pidx);
-  // mList->resizeColumnToContents(0);
   hbC1L1->addWidget(mList, 1);
   mDirModel = new QFileSystemModel;
   mDirModel->setReadOnly(true);
   mDirModel->setFilter(QDir::AllEntries|QDir::NoDotAndDotDot|QDir::AllDirs);
-  // mDirModel->setSorting(QDir::DirsFirst|QDir::IgnoreCase|QDir::Name);
-  // mDirModel->setRootPath(home);
-  // QModelIndex didx = mDirModel->index(drives[0]);
-  // QModelIndex didx = mDirModel->index(home);
+  mDirModel->setRootPath(drives[0]);
   QModelIndex didx = mDirModel->index(fimg);
   mTree = new QTreeView;
   mTree->setModel(mDirModel);
@@ -89,15 +83,15 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
-  mTree->setRootIndex(didx);
-  // mTree->setRootIndex(mDirModel->index(drives[0]));
   mTree->setCurrentIndex(didx);
   mTree->expand(didx);
   mTree->scrollTo(didx);
-  // mTree->setColumnHidden(1, true); // Size
-  mTree->setColumnHidden(2, true); // Type
-  mTree->resizeColumnToContents(0);
-  hbC1L1->addWidget(mTree, 4);
+  mTree->setColumnWidth(0, 200); // Name
+  mTree->setColumnWidth(1, 100); // Size
+  mTree->hideColumn(2); // Type
+  mTree->setColumnWidth(3, 100); // Date
+  mTree->sortByColumn(0);
+  hbC1L1->addWidget(mTree, 5);
   wC1->setLayout(hbC1L1);
   setCentralWidget(wC1);
 
@@ -109,7 +103,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
     this, SLOT(listActivated(const QModelIndex &)));
   connect(mTree, SIGNAL(activated(const QModelIndex &)),
     this, SLOT(treeActivated(const QModelIndex &)));
-  // listActivated(pidx);
+  listActivated(pidx);
   treeActivated(didx);
 
   QString fname(trUtf8("%1/%2").arg(home).arg(trUtf8(APP_DATA)));
@@ -351,7 +345,6 @@ void MainWindow::listActivated(const QModelIndex &idx)
   QString drive = mDriveModel->data(driveidx, Qt::EditRole).toString();
   qDebug("list: %s", qPrintable(drive));
   mTree->setRootIndex(mDirModel->setRootPath(drive));
-  // mTree->setRootIndex(mDirModel->index(drive));
 }
 
 void MainWindow::treeActivated(const QModelIndex &idx)
