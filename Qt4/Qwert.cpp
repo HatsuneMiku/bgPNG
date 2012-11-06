@@ -21,9 +21,7 @@ QStringList Qwert::getLogicalDriveStrings(void)
 QStringList Qwert::getLocalDrives(void)
 {
   QStringList result;
-  QStringList drives = getLogicalDriveStrings();
-  for(QStringList::iterator it = drives.begin(); it != drives.end(); ++it){
-    QString s = *it;
+  foreach(QString s, getLogicalDriveStrings()){
     switch(GetDriveTypeA(s.toStdString().c_str())){
     case DRIVE_UNKNOWN: break;
     case DRIVE_NO_ROOT_DIR: break;
