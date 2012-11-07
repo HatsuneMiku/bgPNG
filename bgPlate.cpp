@@ -22,10 +22,6 @@ using namespace std;
 #define APP_NAME L"bgPlate"
 #define APP_ICON_RCID L"icon01"
 #define APP_ICON_TYPE L"IMAGE"
-#define MSG_ERR_USAGE L"Usage: bgPlate HWND IMAGEFILE"
-#define MSG_ERR_TARGET L"target HWND may not be a hex number"
-#define MSG_ERR_FILE L"IMAGEFILE does not exist"
-#define MSG_ERR_DIR L"IMAGEFILE is a directory"
 #define MSG_ERR_GDIPLUS_STARTUP L"cannot startup GDIplus"
 #define MSG_ERR_LOAD_ICON L"cannot load ICON"
 #define MSG_ERR_CONVERT_ICON L"cannot convert ICON"
@@ -33,6 +29,10 @@ using namespace std;
 #define MSG_ERR_REGISTER_CLASS L"cannot register window class"
 #define MSG_ERR_CREATE_WINDOW L"cannot create window"
 #define MSG_ERR_LOAD_IMAGE L"cannot load IMAGE"
+#define MSG_ERR_USAGE L"Usage: bgPlate HWND IMAGEFILE"
+#define MSG_ERR_TARGET L"target HWND may not be a hex number"
+#define MSG_ERR_FILE L"IMAGEFILE does not exist"
+#define MSG_ERR_DIR L"IMAGEFILE is a directory"
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
 
@@ -41,6 +41,28 @@ int ErrMsg(int result, LPCTSTR msg, ULONG_PTR token=NULL, HWND hwnd=NULL)
   MessageBox(hwnd, msg, APP_NAME, MB_OK | MB_ICONEXCLAMATION);
   if(token) Gdiplus::GdiplusShutdown(token);
   return result;
+}
+
+int ParseCommandLine(HWND hwnd, HWND *target, wstring *filename)
+{
+  wstring tgt;
+  int argc = 0;
+  LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
+  if(argv && argc >= 3){
+    // for(int i = 0; i < argc;) MessageBox(NULL, argv[i++], APP_NAME, MB_OK);
+    tgt = argv[1];
+    filename->assign(argv[2]);
+    LocalFree(argv);
+  }
+  if(argc < 3) return ErrMsg(1, MSG_ERR_USAGE, NULL, hwnd); // after LocalFree
+  wistringstream iss(tgt);
+  unsigned long t = 0;
+  iss >> hex >> t;
+  if(!(*target = (HWND)t)) return ErrMsg(1, MSG_ERR_TARGET, NULL, hwnd);
+  LPCWSTR fn = filename->c_str();
+  if(!PathFileExists(fn)) return ErrMsg(1, MSG_ERR_FILE, NULL, hwnd);
+  if(PathIsDirectory(fn)) return ErrMsg(1, MSG_ERR_DIR, NULL, hwnd);
+  return 0;
 }
 
 Gdiplus::Image *LoadFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
@@ -93,8 +115,12 @@ BOOL SetThrough(HWND hwnd, int through, int l, int r, int t, int b)
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+  static int state = 0;
   static int through = 0;
   static Gdiplus::Image *img = NULL;
+  static UINT_PTR timerid;
+  static HWND target = 0;
+  static wstring filename;
   // HINSTANCE hinst = ((LPCREATESTRUCT)lparam)->hInstance; // WM_CREATE only
   // HINSTANCE hinst = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
   HINSTANCE hinst = GetModuleHandle(NULL);
@@ -103,6 +129,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     SetThrough(hwnd, 1, -1, -1, -1, -1);
     img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
     if(!img) ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
+    SetTimer(hwnd, timerid, 100, NULL);
     return FALSE;
   case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
     SetThrough(hwnd, 1, -1, -1, -1, -1);
@@ -122,11 +149,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     g.Clear(Gdiplus::Color(64, 255, 255, 255)); // ARGB
     int x = (r.right - r.left - img->GetWidth()) / 2;
     int y = (r.bottom - r.top - img->GetHeight()) / 2;
-    g.DrawImage(img, x, y, img->GetWidth(), img->GetHeight());
+    if(img) g.DrawImage(img, x, y, img->GetWidth(), img->GetHeight());
     EndPaint(hwnd, &ps);
     } return FALSE;
+  case WM_TIMER:
+    if(!state){
+      state = 1;
+      if(ParseCommandLine(hwnd, &target, &filename)){ DestroyWindow(hwnd); }
+      if(img){ delete img; img = NULL; }
+      img = Gdiplus::Image::FromFile(filename.c_str());
+      if(!img || img->GetLastStatus() != Gdiplus::Ok)
+        ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
+      InvalidateRect(hwnd, NULL, TRUE);
+    }
+    return FALSE;
   case WM_DESTROY:
     if(img){ delete img; img = NULL; }
+    KillTimer(hwnd, timerid);
     PostQuitMessage(0);
     return FALSE;
   }
@@ -152,15 +191,14 @@ BOOL RegCls(HINSTANCE hinst, HICON hicon)
   return RegisterClassEx(&wc);
 }
 
-HICON CreateIconFromResource(ULONG_PTR token,
-  HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
+HICON CreateIconFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
 {
   HICON hicon = NULL;
   Gdiplus::Image *img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
-  if(!img) return (HICON)ErrMsg(NULL, MSG_ERR_LOAD_ICON, token);
+  if(!img) return (HICON)ErrMsg(NULL, MSG_ERR_LOAD_ICON);
   int w = img->GetWidth(), h = img->GetHeight();
   Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(w, h, img->GetPixelFormat());
-  if(!bmp) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  if(!bmp) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON);
   Gdiplus::Color bkc(0, 255, 255, 255); // ARGB
   { // convert Gdiplus::Image to Gdiplus::Bitmap using 'GDI+' Graphics Object
     Gdiplus::Graphics g(bmp); // g must be free here (before delete bmp)
@@ -172,9 +210,9 @@ HICON CreateIconFromResource(ULONG_PTR token,
   HDC hdc = GetDC(hwnd);
   HBITMAP hbitmap = NULL;
   bmp->GetHBITMAP(bkc, &hbitmap); // create (must DeleteObject later)
-  if(!hbitmap) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  if(!hbitmap) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON);
   HBITMAP hbmMask = CreateCompatibleBitmap(hdc, w, h);
-  if(!hbmMask) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  if(!hbmMask) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON);
   ICONINFO ii = {0}; // with clear hotspots (x, y)
   ii.fIcon = TRUE; // not Cursor
   ii.hbmColor = hbitmap; // will be copied
@@ -191,43 +229,17 @@ HICON CreateIconFromResource(ULONG_PTR token,
   return hicon; // must DestroyIcon later
 }
 
-int ParseCommandLine(HWND *target, wstring *filename)
-{
-  wstring tgt, fn;
-  int argc = 0;
-  LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
-  if(argv && argc >= 3){
-    // for(int i = 0; i < argc;) MessageBox(NULL, argv[i++], APP_NAME, MB_OK);
-    tgt = argv[1];
-    fn = argv[2];
-    LocalFree(argv);
-  }
-  if(argc < 3) return ErrMsg(1, MSG_ERR_USAGE); // must be at after LocalFree
-  wistringstream iss(tgt);
-  unsigned long t = 0;
-  iss >> hex >> t;
-  if(!(*target = (HWND)t)) return ErrMsg(1, MSG_ERR_TARGET);
-  LPCWSTR f = fn.c_str();
-  if(!PathFileExists(f)) return ErrMsg(1, MSG_ERR_FILE);
-  if(PathIsDirectory(f)) return ErrMsg(1, MSG_ERR_DIR);
-  return 0;
-}
-
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
 {
-  int w = WINDOW_WIDTH, h = WINDOW_HEIGHT;
-  HWND target;
-  wstring filename;
-  if(ParseCommandLine(&target, &filename)) return 1;
   // GDI+ must be initialized before create window (use GDI+ at WM_CREATE)
   ULONG_PTR token;
   Gdiplus::GdiplusStartupInput gsi;
   if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok)
     return ErrMsg(1, MSG_ERR_GDIPLUS_STARTUP);
-  HICON hicon = CreateIconFromResource(token,
-    hinst, APP_ICON_RCID, APP_ICON_TYPE);
+  HICON hicon = CreateIconFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
   if(!hicon) return ErrMsg(1, MSG_ERR_GET_HICON, token);
   if(!RegCls(hinst, hicon)) return ErrMsg(1, MSG_ERR_REGISTER_CLASS, token);
+  int w = WINDOW_WIDTH, h = WINDOW_HEIGHT;
   int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
