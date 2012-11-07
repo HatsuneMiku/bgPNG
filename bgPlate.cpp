@@ -12,8 +12,22 @@
 
 #define CLASS_NAME L"bgPlate"
 #define APP_NAME L"bgPlate"
+#define APP_ICON_RCID L"icon01"
+#define APP_ICON_TYPE L"IMAGE"
+#define MSG_ERR_GDIPLUS_STARTUP L"cannot startup GDIplus"
+#define MSG_ERR_LOAD_ICON L"cannot load ICON"
+#define MSG_ERR_REGISTER_CLASS L"cannot register window class"
+#define MSG_ERR_CREATE_WINDOW L"cannot create window"
+#define MSG_ERR_LOAD_IMAGE L"cannot load IMAGE"
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
+
+int ErrMsg(int result, LPCTSTR msg, ULONG_PTR token=NULL, HWND hwnd=NULL)
+{
+  MessageBox(hwnd, msg, APP_NAME, MB_OK | MB_ICONEXCLAMATION);
+  if(token) Gdiplus::GdiplusShutdown(token);
+  return result;
+}
 
 Gdiplus::Image *LoadFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
 {
@@ -73,9 +87,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   switch(msg){
   case WM_CREATE:
     SetThrough(hwnd, 1, -1, -1, -1, -1);
-    img = LoadFromResource(hinst, L"icon01", L"IMAGE");
-    if(!img) MessageBox(hwnd, L"cannot load IMAGE", APP_NAME,
-      MB_OK | MB_ICONEXCLAMATION);
+    img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
+    if(!img) ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
     return FALSE;
   case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
     SetThrough(hwnd, 1, -1, -1, -1, -1);
@@ -127,25 +140,27 @@ BOOL RegCls(HINSTANCE hinst)
 
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
 {
-  MSG msg;
-  if(!RegCls(hinst)) return 1;
   // GDI+ must be initialized before create window (use GDI+ at WM_CREATE)
   ULONG_PTR token;
   Gdiplus::GdiplusStartupInput gsi;
-  if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok) return 1;
+  if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok)
+    return ErrMsg(1, MSG_ERR_GDIPLUS_STARTUP);
+  Gdiplus::Image *img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
+  if(!img) return ErrMsg(1, MSG_ERR_LOAD_ICON, token);
+  if(!RegCls(hinst)) return ErrMsg(1, MSG_ERR_REGISTER_CLASS, token);
   int x = (GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
     // WS_OVERLAPPEDWINDOW | WS_VISIBLE,
     WS_POPUP | WS_VISIBLE,
     x, y, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hinst, NULL);
-  if(hwnd){
-    ShowWindow(hwnd, ncmd);
-    UpdateWindow(hwnd);
-    while(GetMessage(&msg, NULL, 0, 0) > 0){
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
-    }
+  if(!hwnd) return ErrMsg(1, MSG_ERR_CREATE_WINDOW, token);
+  ShowWindow(hwnd, ncmd);
+  UpdateWindow(hwnd);
+  MSG msg;
+  while(GetMessage(&msg, NULL, 0, 0) > 0){
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
   }
   Gdiplus::GdiplusShutdown(token);
   return msg.wParam;
