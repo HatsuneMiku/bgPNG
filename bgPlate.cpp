@@ -3,17 +3,29 @@
 
   rc bgPlate.rc
   cl bgPlate.cpp bgPlate.res kernel32.lib user32.lib ole32.lib gdi32.lib \
-    gdiplus.lib dwmapi.lib -DUNICODE
+    gdiplus.lib dwmapi.lib shell32.lib shlwapi.lib -DUNICODE -EHsc
 */
 
+#ifndef UNICODE
+#define UNICODE
+#endif
 #include <windows.h>
 #include <gdiplus.h>
 #include <dwmapi.h>
+#include <shlwapi.h>
+#include <sstream>
+#include <string>
+
+using namespace std;
 
 #define CLASS_NAME L"bgPlate"
 #define APP_NAME L"bgPlate"
 #define APP_ICON_RCID L"icon01"
 #define APP_ICON_TYPE L"IMAGE"
+#define MSG_ERR_USAGE L"Usage: bgPlate HWND IMAGEFILE"
+#define MSG_ERR_TARGET L"target HWND may not be a hex number"
+#define MSG_ERR_FILE L"IMAGEFILE does not exist"
+#define MSG_ERR_DIR L"IMAGEFILE is a directory"
 #define MSG_ERR_GDIPLUS_STARTUP L"cannot startup GDIplus"
 #define MSG_ERR_LOAD_ICON L"cannot load ICON"
 #define MSG_ERR_CONVERT_ICON L"cannot convert ICON"
@@ -179,8 +191,34 @@ HICON CreateIconFromResource(ULONG_PTR token,
   return hicon; // must DestroyIcon later
 }
 
+int ParseCommandLine(HWND *target, wstring *filename)
+{
+  wstring tgt, fn;
+  int argc = 0;
+  LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &argc);
+  if(argv && argc >= 3){
+    // for(int i = 0; i < argc;) MessageBox(NULL, argv[i++], APP_NAME, MB_OK);
+    tgt = argv[1];
+    fn = argv[2];
+    LocalFree(argv);
+  }
+  if(argc < 3) return ErrMsg(1, MSG_ERR_USAGE); // must be at after LocalFree
+  wistringstream iss(tgt);
+  unsigned long t = 0;
+  iss >> hex >> t;
+  if(!(*target = (HWND)t)) return ErrMsg(1, MSG_ERR_TARGET);
+  LPCWSTR f = fn.c_str();
+  if(!PathFileExists(f)) return ErrMsg(1, MSG_ERR_FILE);
+  if(PathIsDirectory(f)) return ErrMsg(1, MSG_ERR_DIR);
+  return 0;
+}
+
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
 {
+  int w = WINDOW_WIDTH, h = WINDOW_HEIGHT;
+  HWND target;
+  wstring filename;
+  if(ParseCommandLine(&target, &filename)) return 1;
   // GDI+ must be initialized before create window (use GDI+ at WM_CREATE)
   ULONG_PTR token;
   Gdiplus::GdiplusStartupInput gsi;
@@ -190,12 +228,12 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
     hinst, APP_ICON_RCID, APP_ICON_TYPE);
   if(!hicon) return ErrMsg(1, MSG_ERR_GET_HICON, token);
   if(!RegCls(hinst, hicon)) return ErrMsg(1, MSG_ERR_REGISTER_CLASS, token);
-  int x = (GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH) / 2;
-  int y = (GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2;
+  int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
+  int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
     // WS_OVERLAPPEDWINDOW | WS_VISIBLE,
     WS_POPUP | WS_VISIBLE,
-    x, y, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hinst, NULL);
+    x, y, w, h, NULL, NULL, hinst, NULL);
   if(!hwnd) return ErrMsg(1, MSG_ERR_CREATE_WINDOW, token);
   ShowWindow(hwnd, ncmd);
   UpdateWindow(hwnd);
