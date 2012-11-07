@@ -16,6 +16,8 @@
 #define APP_ICON_TYPE L"IMAGE"
 #define MSG_ERR_GDIPLUS_STARTUP L"cannot startup GDIplus"
 #define MSG_ERR_LOAD_ICON L"cannot load ICON"
+#define MSG_ERR_CONVERT_ICON L"cannot convert ICON"
+#define MSG_ERR_GET_HICON L"cannot get HICON"
 #define MSG_ERR_REGISTER_CLASS L"cannot register window class"
 #define MSG_ERR_CREATE_WINDOW L"cannot create window"
 #define MSG_ERR_LOAD_IMAGE L"cannot load IMAGE"
@@ -119,7 +121,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-BOOL RegCls(HINSTANCE hinst)
+BOOL RegCls(HINSTANCE hinst, HICON hicon)
 {
   WNDCLASSEX wc;
   memset(&wc, 0, sizeof(wc));
@@ -129,13 +131,52 @@ BOOL RegCls(HINSTANCE hinst)
   wc.cbClsExtra = 0;
   wc.cbWndExtra = 0;
   wc.hInstance = hinst;
-  wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+  wc.hIcon = hicon; // LoadIcon(NULL, IDI_WINLOGO);
   wc.hIconSm = wc.hIcon;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
   wc.lpszMenuName = NULL;
   wc.lpszClassName = CLASS_NAME;
   return RegisterClassEx(&wc);
+}
+
+HICON CreateIconFromResource(ULONG_PTR token,
+  HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
+{
+  HICON hicon = NULL;
+  Gdiplus::Image *img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
+  if(!img) return (HICON)ErrMsg(NULL, MSG_ERR_LOAD_ICON, token);
+  int w = img->GetWidth(), h = img->GetHeight();
+  Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(w, h, img->GetPixelFormat());
+  if(!bmp) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  Gdiplus::Color bkc(0, 255, 255, 255); // ARGB
+  { // convert Gdiplus::Image to Gdiplus::Bitmap using 'GDI+' Graphics Object
+    Gdiplus::Graphics g(bmp); // g must be free here (before delete bmp)
+    g.Clear(bkc);
+    g.DrawImage(img, 0, 0, w, h);
+  }
+#if 0 // create Icon using 'GDI'
+  HWND hwnd = GetDesktopWindow();
+  HDC hdc = GetDC(hwnd);
+  HBITMAP hbitmap = NULL;
+  bmp->GetHBITMAP(bkc, &hbitmap); // create (must DeleteObject later)
+  if(!hbitmap) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  HBITMAP hbmMask = CreateCompatibleBitmap(hdc, w, h);
+  if(!hbmMask) return (HICON)ErrMsg(NULL, MSG_ERR_CONVERT_ICON, token);
+  ICONINFO ii = {0}; // with clear hotspots (x, y)
+  ii.fIcon = TRUE; // not Cursor
+  ii.hbmColor = hbitmap; // will be copied
+  ii.hbmMask = hbmMask; // will be copied
+  hicon = CreateIconIndirect(&ii);
+  DeleteObject(hbmMask);
+  DeleteObject(hbitmap);
+  ReleaseDC(hwnd, hdc);
+#else // create Icon using 'GDI+'
+  bmp->GetHICON(&hicon); // create (must DestroyIcon later)
+#endif
+  delete bmp; bmp = NULL;
+  delete img; img = NULL;
+  return hicon; // must DestroyIcon later
 }
 
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
@@ -145,9 +186,10 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
   Gdiplus::GdiplusStartupInput gsi;
   if(Gdiplus::GdiplusStartup(&token, &gsi, NULL) != Gdiplus::Ok)
     return ErrMsg(1, MSG_ERR_GDIPLUS_STARTUP);
-  Gdiplus::Image *img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
-  if(!img) return ErrMsg(1, MSG_ERR_LOAD_ICON, token);
-  if(!RegCls(hinst)) return ErrMsg(1, MSG_ERR_REGISTER_CLASS, token);
+  HICON hicon = CreateIconFromResource(token,
+    hinst, APP_ICON_RCID, APP_ICON_TYPE);
+  if(!hicon) return ErrMsg(1, MSG_ERR_GET_HICON, token);
+  if(!RegCls(hinst, hicon)) return ErrMsg(1, MSG_ERR_REGISTER_CLASS, token);
   int x = (GetSystemMetrics(SM_CXSCREEN) - WINDOW_WIDTH) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - WINDOW_HEIGHT) / 2;
   HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
@@ -162,6 +204,7 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
+  DestroyIcon(hicon);
   Gdiplus::GdiplusShutdown(token);
   return msg.wParam;
 }
