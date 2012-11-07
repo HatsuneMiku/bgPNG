@@ -84,6 +84,7 @@ MainWindow::MainWindow(QQueue<QString> &q,
   mTree->header()->setSortIndicator(0, Qt::AscendingOrder);
   mTree->header()->setSortIndicatorShown(true);
   mTree->header()->setClickable(true);
+  // mTree->setRootIndex(mProxyModel->mapFromSource(mDirModel->index("")));
   mTree->setCurrentIndex(pidx);
   mTree->expand(pidx);
   mTree->scrollTo(pidx);
@@ -419,7 +420,7 @@ void MainWindow::fin()
 {
 #if 1
   static int i = 0;
-  if(++i > 200){
+  if(++i > 1){
     qDebug("[MainWindow fin: %08x]", (uint)th->currentThreadId());
     i = 0;
   }

@@ -11,7 +11,7 @@ bgPNG::bgPNG(QThread *thread, int n) :
   th(thread), num(n), stat(0)
 {
   qDebug("[bgPNG created: %d, %08x]", num, (uint)th->currentThreadId());
-  this->moveToThread(th);
+  // this->moveToThread(th); // Widgets cannot be moved to a new thread
   setAttribute(Qt::WA_TranslucentBackground);
   move(40, 20);
   resize(400, 200);
