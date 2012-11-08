@@ -129,7 +129,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     SetThrough(hwnd, 1, -1, -1, -1, -1);
     img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
     if(!img) ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
-    SetTimer(hwnd, timerid, 100, NULL);
+    SetTimer(hwnd, timerid, 50, NULL);
     return FALSE;
   case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
     SetThrough(hwnd, 1, -1, -1, -1, -1);
@@ -155,7 +155,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   case WM_TIMER:
     if(!state){
       state = 1;
-      if(ParseCommandLine(hwnd, &target, &filename)){ DestroyWindow(hwnd); }
+      if(ParseCommandLine(hwnd, &target, &filename)){
+        DestroyWindow(hwnd);
+        return FALSE;
+      }
       if(img){ delete img; img = NULL; }
       img = Gdiplus::Image::FromFile(filename.c_str());
       if(!img || img->GetLastStatus() != Gdiplus::Ok)
@@ -163,14 +166,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
       InvalidateRect(hwnd, NULL, TRUE);
     }else{
       if(!target || !img) return FALSE;
-      //if(nochange) return FALSE;
-      //FindWindow(hwnd);
-      RECT rc;
-      GetWindowRect(target, &rc);
-      //setsize
-      //movewindow
-      //zorder
-      // InvalidateRect(hwnd, NULL, TRUE);
+      RECT tr, sr;
+      if(!GetWindowRect(target, &tr)){
+        DestroyWindow(hwnd);
+        return FALSE;
+      }
+      GetWindowRect(hwnd, &sr);
+      if(!memcmp(&tr, &sr, sizeof(RECT))) return FALSE;
+      SetWindowPos(hwnd, target, // it will be ignored by SWP_NOZORDER
+        tr.left, tr.top, tr.right - tr.left, tr.bottom - tr.top,
+        SWP_NOACTIVATE|SWP_SHOWWINDOW); // SWP_NOZORDER
+      SetWindowPos(target, hwnd, 0, 0, 0, 0,
+        SWP_NOACTIVATE|SWP_NOREDRAW|SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW);
     }
     return FALSE;
   case WM_DESTROY:
