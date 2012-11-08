@@ -180,7 +180,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
       RECT tr, sr;
       if(!GetWindowRect(target, &tr)) return FALSE; // Destroy on state==0
       GetWindowRect(hwnd, &sr);
-      if(!memcmp(&tr, &sr, sizeof(RECT))) return FALSE;
+      HWND tmp1 = FindWindowEx(GetDesktopWindow(), hwnd,
+        classname.c_str(), windowtext.c_str());
+      HWND tmp2 = FindWindowEx(GetDesktopWindow(), hwnd, NULL, NULL);
+      if(!memcmp(&tr, &sr, sizeof(RECT)) && tmp1 == target) return FALSE;
       SetWindowPos(hwnd, target, // it will be ignored by SWP_NOZORDER
         tr.left, tr.top, tr.right - tr.left, tr.bottom - tr.top,
         SWP_NOACTIVATE|SWP_SHOWWINDOW); // SWP_NOZORDER
