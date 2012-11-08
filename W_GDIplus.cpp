@@ -6,6 +6,9 @@
     gdiplus.lib dwmapi.lib -DUNICODE
 */
 
+#ifndef UNICODE
+#define UNICODE
+#endif
 #include <windows.h>
 #include <gdiplus.h>
 #include <dwmapi.h>

@@ -19,19 +19,19 @@ typedef struct tagGdiplusStartupInput { // There is a constructor for C++
   BOOL SuppressExternalCodecs;      // BOOL           FALSE
 } GdiplusStartupInput;
 typedef ULONG Status;
-typedef Status (WINAPI *NotificationHookProc)(ULONG **token);
-typedef VOID (WINAPI *NotificationUnhookProc)(ULONG *token);
+typedef Status (WINAPI *NotificationHookProc)(ULONG_PTR *token);
+typedef VOID (WINAPI *NotificationUnhookProc)(ULONG_PTR token);
 typedef struct tagGdiplusStartupOutput { // There is a constructor for C++
   NotificationHookProc NotificationHook;
   NotificationUnhookProc NotificationUnhook;
 } GdiplusStartupOutput;
 typedef Status (WINAPI *tGdiplusStartup)(               // GpStatus
-  ULONG **token,                    // ULONG **
+  ULONG_PTR *token,                 // ULONG_PTR *
   GdiplusStartupInput *inputbuf,    // GdiplusStartupInput *
   GdiplusStartupOutput *outputbuf   // GdiplusStartupOutput *
 );
-typedef void (WINAPI *tGdiplusShutdown)(                // void
-  ULONG *token                      // ULONG *
+typedef VOID (WINAPI *tGdiplusShutdown)(                // void
+  ULONG_PTR token                   // ULONG_PTR
 );
 typedef Status (WINAPI *tGdipCreateBitmapFromFile)(     // GpStatus
   WCHAR *filename,                  // GDIPCONST WCHAR *
@@ -52,11 +52,11 @@ tGdipCreateBitmapFromFile GdipCreateBitmapFromFile;
 tGdipCreateHBITMAPFromBitmap GdipCreateHBITMAPFromBitmap;
 tGdipDisposeImage GdipDisposeImage;
 
-ULONG loadfunctions(HMODULE hmodule)
+ULONG_PTR loadfunctions(HMODULE hmodule)
 {
-  ULONG result = 1;
+  ULONG_PTR result = 1;
   if(!hmodule) return 0;
-#define LOADFUNC(f) (result *= (ULONG)(f = (t##f)GetProcAddress(hmodule, #f)))
+#define LOADFUNC(f) (result*=(ULONG_PTR)(f=(t##f)GetProcAddress(hmodule,#f)))
   LOADFUNC(GdiplusStartup);
   LOADFUNC(GdiplusShutdown);
   LOADFUNC(GdipCreateBitmapFromFile);
@@ -67,7 +67,7 @@ ULONG loadfunctions(HMODULE hmodule)
 
 ULONG loadimage(WCHAR *filename)
 {
-  ULONG *token;
+  ULONG_PTR token;
   GdiplusStartupInput gsi = {1, NULL, FALSE, FALSE};
   if(!GdiplusStartup(&token, &gsi, 0)){
     ULONG *bitmap;

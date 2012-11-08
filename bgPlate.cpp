@@ -118,7 +118,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   static int state = 0;
   static int through = 0;
   static Gdiplus::Image *img = NULL;
-  static UINT_PTR timerid;
+  static UINT_PTR timerid = 1001;
   static HWND target = 0;
   static wstring filename;
   // HINSTANCE hinst = ((LPCREATESTRUCT)lparam)->hInstance; // WM_CREATE only
@@ -161,6 +161,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
       if(!img || img->GetLastStatus() != Gdiplus::Ok)
         ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
       InvalidateRect(hwnd, NULL, TRUE);
+    }else{
+      if(!target || !img) return FALSE;
+      //if(nochange) return FALSE;
+      //FindWindow(hwnd);
+      RECT rc;
+      GetWindowRect(target, &rc);
+      //setsize
+      //movewindow
+      //zorder
+      // InvalidateRect(hwnd, NULL, TRUE);
     }
     return FALSE;
   case WM_DESTROY:
