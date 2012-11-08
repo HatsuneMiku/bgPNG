@@ -54,7 +54,7 @@ Gdiplus::Image *LoadFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
   return NULL;
 }
 
-BOOL SetThrough(HWND hwnd, int through, int l, int r, int t, int b)
+BOOL SetThrough(HWND hwnd, int through, int l=-1, int r=-1, int t=-1, int b=-1)
 {
   BOOL en;
   if(DwmIsCompositionEnabled(&en) == S_OK)
@@ -75,19 +75,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   HINSTANCE hinst = GetModuleHandle(NULL);
   switch(msg){
   case WM_CREATE:
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     img = LoadFromResource(hinst, L"png01", L"IMAGE");
     if(!img) MessageBox(hwnd, L"cannot load IMAGE", APP_NAME,
       MB_OK | MB_ICONEXCLAMATION);
     return FALSE;
   case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     return FALSE;
   case WM_LBUTTONDOWN:
     SetThrough(hwnd, through = 1 - through, 40, 40, 80, 80);
     return FALSE;
   case WM_RBUTTONDOWN:
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     return FALSE;
   case WM_PAINT:{
     PAINTSTRUCT ps;
