@@ -18,6 +18,7 @@
 
 using namespace std;
 
+#define NAMEBUFSIZ 512
 #define CLASS_NAME L"bgPlate"
 #define APP_NAME L"bgPlate"
 #define APP_ICON_RCID L"icon01"
@@ -33,6 +34,7 @@ using namespace std;
 #define MSG_ERR_TARGET L"target HWND may not be a hex number"
 #define MSG_ERR_FILE L"IMAGEFILE does not exist"
 #define MSG_ERR_DIR L"IMAGEFILE is a directory"
+#define MSG_ERR_HWND L"target HWND may not be a top window"
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
 
@@ -101,7 +103,7 @@ Gdiplus::Image *LoadFromResource(HINSTANCE hinst, LPCTSTR name, LPCTSTR typ)
   return NULL;
 }
 
-BOOL SetThrough(HWND hwnd, int through, int l, int r, int t, int b)
+BOOL SetThrough(HWND hwnd, int through, int l=-1, int r=-1, int t=-1, int b=-1)
 {
   BOOL en;
   if(DwmIsCompositionEnabled(&en) == S_OK)
@@ -120,25 +122,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
   static Gdiplus::Image *img = NULL;
   static UINT_PTR timerid = 1001;
   static HWND target = 0;
-  static wstring filename;
+  static wstring filename, classname, windowtext;
   // HINSTANCE hinst = ((LPCREATESTRUCT)lparam)->hInstance; // WM_CREATE only
   // HINSTANCE hinst = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
   HINSTANCE hinst = GetModuleHandle(NULL);
   switch(msg){
   case WM_CREATE:
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     img = LoadFromResource(hinst, APP_ICON_RCID, APP_ICON_TYPE);
     if(!img) ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
     SetTimer(hwnd, timerid, 50, NULL);
     return FALSE;
   case WM_DWMCOMPOSITIONCHANGED: // Aero enabled or disabled
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     return FALSE;
   case WM_LBUTTONDOWN:
     SetThrough(hwnd, through = 1 - through, 40, 40, 80, 80);
     return FALSE;
   case WM_RBUTTONDOWN:
-    SetThrough(hwnd, 1, -1, -1, -1, -1);
+    SetThrough(hwnd, 1);
     return FALSE;
   case WM_PAINT:{
     PAINTSTRUCT ps;
@@ -153,24 +155,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     EndPaint(hwnd, &ps);
     } return FALSE;
   case WM_TIMER:
-    if(!state){
+    if(!state){ // *** re-entry here with state==1 when calling ErrMsg() ***
       state = 1;
       if(ParseCommandLine(hwnd, &target, &filename)){
         DestroyWindow(hwnd);
         return FALSE;
       }
+      WCHAR clsname[NAMEBUFSIZ + 1], wintext[NAMEBUFSIZ + 1];
+      clsname[0] = 0, wintext[0] = 0;
+      if(!GetClassNameW(target, clsname, NAMEBUFSIZ)
+      || !GetWindowTextW(target, wintext, NAMEBUFSIZ)){
+        ErrMsg(FALSE, MSG_ERR_HWND, NULL, hwnd);
+        DestroyWindow(hwnd);
+        return FALSE;
+      }
+      classname.assign(clsname), windowtext.assign(wintext);
       if(img){ delete img; img = NULL; }
       img = Gdiplus::Image::FromFile(filename.c_str());
       if(!img || img->GetLastStatus() != Gdiplus::Ok)
-        ErrMsg(FALSE, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
+        img = (Gdiplus::Image *)ErrMsg(NULL, MSG_ERR_LOAD_IMAGE, NULL, hwnd);
       InvalidateRect(hwnd, NULL, TRUE);
     }else{
       if(!target || !img) return FALSE;
       RECT tr, sr;
-      if(!GetWindowRect(target, &tr)){
-        DestroyWindow(hwnd);
-        return FALSE;
-      }
+      if(!GetWindowRect(target, &tr)) return FALSE; // Destroy on state==0
       GetWindowRect(hwnd, &sr);
       if(!memcmp(&tr, &sr, sizeof(RECT))) return FALSE;
       SetWindowPos(hwnd, target, // it will be ignored by SWP_NOZORDER
@@ -259,9 +267,7 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmd, int ncmd)
   int w = WINDOW_WIDTH, h = WINDOW_HEIGHT;
   int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
   int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
-  HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME,
-    // WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-    WS_POPUP | WS_VISIBLE,
+  HWND hwnd = CreateWindow(CLASS_NAME, APP_NAME, WS_POPUP | WS_VISIBLE,
     x, y, w, h, NULL, NULL, hinst, NULL);
   if(!hwnd) return ErrMsg(1, MSG_ERR_CREATE_WINDOW, token);
   ShowWindow(hwnd, ncmd);
