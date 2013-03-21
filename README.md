@@ -21,3 +21,12 @@ Requires
 
  * Qt4 http://qt.digia.com/Try-Qt-Now/ (only when you build bgPNG for Qt4)
 
+
+License
+-------
+
+ * http://msdn.microsoft.com/ja-jp/claudia00_03
+ * https://github.com/HatsuneMiku/bgPNG/blob/master/resource/claudia.png?raw=true
+
+© 2011 Microsoft Corporation All Rights Reserved.
+
